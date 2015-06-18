@@ -33,6 +33,10 @@ namespace wawl {
 				return windowShowmode;
 			}
 
+			inline static std::size_t GetSystemTimeMilisec() {
+				return timeGetTime();
+			}
+
 			static void _impl_SetWinMainArgs(const str::TString& cmdLine, int cmdShow) {
 				//‰‰ñŒÄ‚Ño‚µ‚©‚Ç‚¤‚©
 				static bool isFirst = true;

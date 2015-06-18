@@ -9,7 +9,12 @@
 namespace wawl {
 	namespace util {
 
-		
+		class Timer {
+		public:
+
+		private:
+
+		};
 
 	}
 }
