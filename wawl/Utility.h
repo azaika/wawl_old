@@ -1,10 +1,6 @@
 #pragma once
 
-//WinAPI
-#define NOMINMAX
-#include <Windows.h>
-#include <tchar.h>
-#undef NOMINMAX
+#include "System.h"
 
 namespace wawl {
 	namespace util {
