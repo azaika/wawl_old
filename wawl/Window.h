@@ -1,25 +1,16 @@
 #pragma once
 
-//C++ STL
-#include <string>
-
-//WinAPI
-#define NOMINMAX
-
-#include <Windows.h>
-#include <tchar.h>
-
-#undef NOMINMAX
+#include "System.h"
 
 namespace wawl {
 	namespace wnd {
 
 		//TODO : WindowBaseクラスをpublic継承したクラスを作る
 
-		class WindowBase{
+		class WindowBase {
 		public:
 			//Windowハンドルを取得
-			HWND GetHandle() const{
+			HWND GetHandle() const {
 				return handle_;
 			}
 

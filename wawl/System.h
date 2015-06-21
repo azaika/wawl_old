@@ -9,7 +9,7 @@
 #undef NOMINMAX
 
 //wawl based Header
-#include "String.h"
+#include "BaseType.h"
 
 //ユーザー定義Main
 void WawlMain();
@@ -21,22 +21,27 @@ namespace wawl {
 
 		class System final{
 		public:
+			System() = delete;
+			System(const System&) = delete;
+			System(System&&) = delete;
+			void operator = (const System&) = delete;
+
 			//このアプリのAppHandleを取得
 			inline static AppHandle GetAppHandle() {
 				return static_cast<HINSTANCE>(::GetModuleHandle(0));
 			}
 
 			//コマンドライン引数を取得
-			inline static str::TString GetCmdLine() {
-				return cmdArgStr;
+			inline static TString GetCmdLine() {
+				return cmdArgStr_;
 			}
 			//完全なコマンドライン引数を取得
-			inline static str::TString GetFullCmdLine() {
+			inline static TString GetFullCmdLine() {
 				return ::GetCommandLine();
 			}
 
 			inline static int GetWindowShowmode() {
-				return windowShowmode;
+				return windowShowmode_;
 			}
 
 			//システムクロックをミリ秒単位で取得
@@ -47,46 +52,46 @@ namespace wawl {
 			//システムのタイマー分解能を変更。必ず終わったあとResetTimeResolution()を呼び出す
 			inline static bool ChangeTimeResolution(unsigned int res) {
 				return (
-					sysClock == 0 ?
-					sysClock = res, ::timeBeginPeriod(res) == TIMERR_NOERROR :
+					sysRes_ == 0 ?
+					sysRes_ = res, ::timeBeginPeriod(res) == TIMERR_NOERROR :
 					false
 					);
 			}
 			//システムのタイマー分解能を元に戻す
 			inline static bool ResetTimeResolution() {
-				int tmpRes = sysClock;
+				int tmpRes = sysRes_;
 
 				return (
-					sysClock != 0 ?
-					sysClock = 0, ::timeEndPeriod(tmpRes) == TIMERR_NOERROR :
+					sysRes_ != 0 ?
+					sysRes_ = 0, ::timeEndPeriod(tmpRes) == TIMERR_NOERROR :
 					false
 					);
 			}
 
-			static void _impl_SetWinMainArgs(const str::TString& cmdLine, int cmdShow) {
+			static void _impl_SetWinMainArgs(const TString& cmdLine, int cmdShow) {
 				//初回呼び出しかどうか
 				static bool isFirst = true;
 
 				if (isFirst) { //初回呼び出しならば
 					isFirst = false;
-					cmdArgStr = cmdLine;
-					windowShowmode = cmdShow;
+					cmdArgStr_ = cmdLine;
+					windowShowmode_ = cmdShow;
 				}
 			}
 
 		private:
 			//コマンドライン引数
-			static str::TString cmdArgStr;
+			static TString cmdArgStr_;
 			//OSから渡されたWindow初期化
-			static int windowShowmode;
+			static int windowShowmode_;
 
 			//システムクロック変更値の保存
-			static int sysClock;
+			static int sysRes_;
 
 		};
-		str::TString System::cmdArgStr;
-		int System::windowShowmode = 0;
-		int System::sysClock = 0;
+		TString System::cmdArgStr_;
+		int System::windowShowmode_ = 0;
+		int System::sysRes_ = 0;
 
 	}
 }
@@ -98,7 +103,10 @@ int WINAPI _tWinMain(
 	int cmdShow
 	) {
 	using namespace wawl;
+
 	sys::System::_impl_SetWinMainArgs(cmdLine, cmdShow);
+
+	WawlMain();
 
 	return 0;
 }
