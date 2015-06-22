@@ -82,6 +82,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BaseType.h" />
+    <ClInclude Include="Input.h" />
     <ClInclude Include="System.h" />
     <ClInclude Include="Type.h" />
     <ClInclude Include="Utility.h" />
