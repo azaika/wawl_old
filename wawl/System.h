@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstdint>
-
 //WinAPI
 #define NOMINMAX
 #include <Windows.h>
@@ -19,38 +17,39 @@ namespace wawl {
 
 		using AppHandle = HINSTANCE;
 
-		class System final{
-		public:
-			System() = delete;
-			System(const System&) = delete;
-			System(System&&) = delete;
-			void operator = (const System&) = delete;
+		//このアプリのAppHandleを取得
+		inline AppHandle GetAppHandle() {
+			return static_cast<HINSTANCE>(::GetModuleHandle(0));
+		}
 
-			//このアプリのAppHandleを取得
-			inline static AppHandle GetAppHandle() {
-				return static_cast<HINSTANCE>(::GetModuleHandle(0));
-			}
+		//完全なコマンドライン引数を取得
+		inline TString GetFullCmdLine() {
+			return ::GetCommandLine();
+		}
+
+		//システムクロックをミリ秒単位で取得
+		inline std::size_t GetTimeMilisec() {
+			return static_cast<std::size_t>(timeGetTime());
+		}
+
+		class _impl_System final{
+		public:
+			_impl_System() = delete;
+			_impl_System(const _impl_System&) = delete;
+			_impl_System(_impl_System&&) = delete;
+			void operator = (const _impl_System&) = delete;
 
 			//コマンドライン引数を取得
-			inline static TString GetCmdLine() {
+			friend inline TString GetCmdLine() {
 				return cmdArgStr_;
 			}
-			//完全なコマンドライン引数を取得
-			inline static TString GetFullCmdLine() {
-				return ::GetCommandLine();
-			}
-
-			inline static int GetWindowShowmode() {
+			
+			friend inline int GetWindowShowmode() {
 				return windowShowmode_;
 			}
 
-			//システムクロックをミリ秒単位で取得
-			inline static std::size_t GetTimeMilisec() {
-				return timeGetTime();
-			}
-
 			//システムのタイマー分解能を変更。必ず終わったあとResetTimeResolution()を呼び出す
-			inline static bool ChangeTimeResolution(unsigned int res) {
+			friend inline bool ChangeTimeResolution(unsigned int res) {
 				return (
 					sysRes_ == 0 ?
 					sysRes_ = res, ::timeBeginPeriod(res) == TIMERR_NOERROR :
@@ -58,7 +57,7 @@ namespace wawl {
 					);
 			}
 			//システムのタイマー分解能を元に戻す
-			inline static bool ResetTimeResolution() {
+			friend inline bool ResetTimeResolution() {
 				int tmpRes = sysRes_;
 
 				return (
@@ -68,7 +67,7 @@ namespace wawl {
 					);
 			}
 
-			static void _impl_SetWinMainArgs(const TString& cmdLine, int cmdShow) {
+			static void SetWinMainArgs(const TString& cmdLine, int cmdShow) {
 				//初回呼び出しかどうか
 				static bool isFirst = true;
 
@@ -89,12 +88,12 @@ namespace wawl {
 			static int sysRes_;
 
 		};
-		TString System::cmdArgStr_;
-		int System::windowShowmode_ = 0;
-		int System::sysRes_ = 0;
+		TString _impl_System::cmdArgStr_;
+		int _impl_System::windowShowmode_ = 0;
+		int _impl_System::sysRes_ = 0;
 
-	}
-}
+	} //::wawl::sys
+} //::wawl
 
 int WINAPI _tWinMain(
 	HINSTANCE hInst,
@@ -104,7 +103,7 @@ int WINAPI _tWinMain(
 	) {
 	using namespace wawl;
 
-	sys::System::_impl_SetWinMainArgs(cmdLine, cmdShow);
+	sys::_impl_System::SetWinMainArgs(cmdLine, cmdShow);
 
 	WawlMain();
 

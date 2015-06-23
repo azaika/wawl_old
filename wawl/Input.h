@@ -22,7 +22,7 @@ namespace wawl {
 			}
 			//マウスのスクリーン座標を設定
 			inline static bool SetMousePos(const Position& p) {
-				::SetCursorPos(p.x, p.y) != 0;
+				return ::SetCursorPos(p.x, p.y) != 0;
 			}
 			//マウスを表示する
 			static bool Show() {
@@ -225,7 +225,7 @@ namespace wawl {
 			Play = VK_PLAY,
 			Zoom = VK_ZOOM,
 			PA1 = VK_PA1,
-			Clear = VK_OEM_CLEAR,
+			SpecialClear = VK_OEM_CLEAR,
 			_impl_EndEnum = 0xFF
 		};
 
@@ -255,7 +255,7 @@ namespace wawl {
 			//stateをアップデート
 			inline KeyState& Update() {
 				beforeState_ = nowState_;
-				nowState_ = ::GetAsyncKeyState(static_cast<int>(target_)) & 0x8000;
+				nowState_ = (::GetAsyncKeyState(static_cast<int>(target_)) & 0x8000) != 0;
 
 				return *this;
 			}
@@ -290,14 +290,17 @@ namespace wawl {
 			Keyboard(Keyboard&&) = delete;
 			void operator = (const Keyboard&) = delete;
 
-			const KeyState& Get(const Key key) {
+			static const KeyState& Get(const Key key) {
 				//初めての呼び出しならメモリを事前に確保
 				static bool isFirst = true;
 				if (isFirst)
 					keyStates.reserve(static_cast<std::size_t>(Key::_impl_EndEnum)),
 					isFirst = false;
 
-				keyStates[key] = std::move(KeyState{ keyStates[key].Update() });
+				if (keyStates.find(key) == keyStates.end())
+					keyStates[key] = std::move(KeyState{ key }), keyStates[key].Update();
+				else
+					keyStates[key] = std::move(KeyState{ keyStates[key].Update() });
 
 				return keyStates[key];
 			}
@@ -306,6 +309,7 @@ namespace wawl {
 			static std::unordered_map < Key, KeyState > keyStates;
 
 		};
+		std::unordered_map < Key, KeyState > Keyboard::keyStates;
 
 	} //::wawl::input
 } //::wawl

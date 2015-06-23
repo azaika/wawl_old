@@ -63,5 +63,5 @@ namespace wawl {
 
 #endif //UNICODE
 
-	}
-}
+	} //::wawl::util
+} //::wawl
