@@ -92,6 +92,28 @@ namespace wawl {
 		int _impl_System::windowShowmode_ = 0;
 		int _impl_System::sysRes_ = 0;
 
+		bool RunCmdLine(const TString& cmdLine, bool showWindow = false) {
+
+			STARTUPINFO si;
+			PROCESS_INFORMATION pi = {};
+
+			//STARTUPINFO ç\ë¢ëÃÇÃì‡óeÇéÊìæ
+			GetStartupInfo(&si);
+
+			return ::CreateProcess(
+				nullptr,
+				const_cast<TChar*>(cmdLine.c_str()),
+				nullptr,
+				nullptr,
+				false,
+				(showWindow ? NULL : CREATE_NO_WINDOW),
+				nullptr,
+				nullptr,
+				&si,
+				&pi
+				) != 0;
+		}
+
 	} //::wawl::sys
 } //::wawl
 

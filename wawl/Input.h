@@ -21,7 +21,7 @@ namespace wawl {
 				return Position{ posPtr->x, posPtr->y };
 			}
 			//マウスのスクリーン座標を設定
-			inline static bool SetMousePos(const Position& p) {
+			inline static bool SetPos(const Position& p) {
 				return ::SetCursorPos(p.x, p.y) != 0;
 			}
 			//マウスを表示する
@@ -229,6 +229,11 @@ namespace wawl {
 			_impl_EndEnum = 0xFF
 		};
 
+		enum class MethodGetKeystate {
+			Static,
+			Dynamic
+		};
+
 		class KeyState {
 		public:
 			//このフレームに押されているか
@@ -238,10 +243,6 @@ namespace wawl {
 			//クリックした瞬間かどうか
 			inline bool Clicked() const {
 				return !beforeState_ && nowState_;
-			}
-			//押し続けているかどうか
-			inline bool Pressed() const {
-				return beforeState_ && nowState_;
 			}
 			//キーを離した瞬間かどうか
 			inline bool Released() const {
@@ -290,26 +291,59 @@ namespace wawl {
 			Keyboard(Keyboard&&) = delete;
 			void operator = (const Keyboard&) = delete;
 
-			static const KeyState& Get(const Key key) {
+			static const KeyState& StaticGet(const Key key) {
+				if (keyStates_.find(key) == keyStates_.end())
+					keyStates_[key] = std::move(KeyState{ key }),
+					keyStates_[key].Update();
+
+				return keyStates_[key];
+			}
+
+			static const KeyState& DynamicGet(const Key key) {
+				if (keyStates_.find(key) == keyStates_.end())
+					keyStates_[key] = std::move(KeyState{ key }),
+					keyStates_[key].Update();
+				else
+					keyStates_[key].Update();
+
+				return keyStates_[key];
+			}
+
+			inline static const KeyState& Get(const Key key) {
 				//初めての呼び出しならメモリを事前に確保
 				static bool isFirst = true;
 				if (isFirst)
-					keyStates.reserve(static_cast<std::size_t>(Key::_impl_EndEnum)),
+					keyStates_.reserve(static_cast<std::size_t>(Key::_impl_EndEnum)),
 					isFirst = false;
 
-				if (keyStates.find(key) == keyStates.end())
-					keyStates[key] = std::move(KeyState{ key }), keyStates[key].Update();
-				else
-					keyStates[key] = std::move(KeyState{ keyStates[key].Update() });
+				switch (method_) {
+				case MethodGetKeystate::Static: {
+					return StaticGet(key);
+				}
+				case MethodGetKeystate::Dynamic: {
+					return DynamicGet(key);
+				}
+				default:
+					return StaticGet(key);
+				}
+			}
 
-				return keyStates[key];
+			inline static void Update() {
+				for (auto&& key : keyStates_)
+					key.second.Update();
+			}
+
+			inline static void SetMethod(const MethodGetKeystate m) {
+				method_ = m;
 			}
 
 		private:
-			static std::unordered_map < Key, KeyState > keyStates;
+			static std::unordered_map < Key, KeyState > keyStates_;
+			static MethodGetKeystate method_;
 
 		};
-		std::unordered_map < Key, KeyState > Keyboard::keyStates;
+		std::unordered_map < Key, KeyState > Keyboard::keyStates_;
+		MethodGetKeystate Keyboard::method_ = MethodGetKeystate::Static;
 
 	} //::wawl::input
 } //::wawl
