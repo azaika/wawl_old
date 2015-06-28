@@ -26,9 +26,13 @@ namespace wawl {
 		//汎用文字列型
 		using TString = std::basic_string < TChar > ;
 
-		using Dword = DWORD;
+		//符号無し16bit整数
+		using Word = ::WORD;
+		//符号無し32bit整数
+		using Dword = ::DWORD;
 
-		using GeneralHandle = HANDLE;
+		//ハンドル
+		using GeneralHandle = ::HANDLE;
 
 	}
 
@@ -198,8 +202,8 @@ namespace wawl {
 		using StartupInfoes = _impl_UnifyEnum < StartupOption > ;
 
 		//Window表示形式
-		enum class WndShowMode : Dword {
-			//ToDo : SW_Hoge系マクロのリネーム
+		enum class WndShowMode : Word {
+			//ToDo : SW_Hoge系マクロのリネーム追加
 		};
 		using WndShowModes = _impl_UnifyEnum < WndShowMode > ;
 
