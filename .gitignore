@@ -4,3 +4,8 @@
 *.pdb
 *.tlog
 *.idb
+*.opensdf
+*.suo
+Debug
+Release
+x64
