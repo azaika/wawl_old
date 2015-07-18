@@ -5,18 +5,18 @@ void WawlMain() {
 	using namespace wawl;
 	using namespace input;
 
-	while (Sleep(1), Keyboard::Update(), true) {
+	while (Sleep(1), true) {
 
-		if ((Keyboard::Get(Key::Escape).Pushed())) {
+		if (getKeyState(Key::Escape)) {
 			::MessageBox(nullptr, L"Good bye", L"Application end", MB_OK);
 			break;
 		}
-		if (Keyboard::Get(Key::X).Released())
+		if (getKeyState(Key::X))
 			::MessageBox(nullptr, L"Input successed", L"KeyX pushed", MB_OK);
-		else if (Keyboard::Get(Key::One).Clicked())
-			Mouse::SetPos({ 100, 100 });
-		else if (Keyboard::Get(Key::Two).Clicked())
-			sys::RunCmdLine(L"cmd /k ipconfig", true);
+		else if (getKeyState(Key::One))
+			setMousePos({ 100, 100 });
+		else if (getKeyState(Key::Two))
+			sys::runCmdLine(L"cmd /k ipconfig", true);
 
 	}
 }

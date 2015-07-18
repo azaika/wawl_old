@@ -6,7 +6,7 @@ namespace wawl {
 	namespace util {
 
 		//AStringをWStringに変換します
-		WString ToWString(const AString& str) {
+		WString toWString(const AString& str) {
 			//変換後のサイズ
 			size_t wstrLen;
 			//サイズ取得&変換エラーチェック
@@ -26,7 +26,7 @@ namespace wawl {
 			//return WString{wch.begin(), wch.end()};
 		}
 		//WStringをAStringに変換します
-		AString ToAString(const WString& wstr) {
+		AString toAString(const WString& wstr) {
 			//変換後のサイズ
 			size_t astrLen;
 			//サイズ取得&変換エラーチェック
@@ -43,21 +43,21 @@ namespace wawl {
 
 #ifdef UNICODE
 		
-		inline const TString& ToTString(const WString& str) {
+		inline const TString& toTString(const WString& str) {
 			return str;
 		}
-		inline const TString& ToTString(const AString& str) {
-			auto&& ret = ToWString(str);
+		inline const TString& toTString(const AString& str) {
+			auto&& ret = toWString(str);
 			return ret;
 		}
 
 #else //UNICODE
 
-		inline const TString& ToTString(const AString& str) {
+		inline const TString& toTString(const AString& str) {
 			return str;
 		}
-		inline const TString& ToTString(const WString& str) {
-			auto&& ret = ToWString(str);
+		inline const TString& toTString(const WString& str) {
+			auto&& ret = toWString(str);
 			return ret;
 		}
 

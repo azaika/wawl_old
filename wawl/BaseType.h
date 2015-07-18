@@ -10,7 +10,8 @@
 
 namespace wawl {
 
-	namespace {
+	//組み込み型using
+#ifdef TRUE
 
 		//Ascii文字型
 		using AChar = ::CHAR;
@@ -34,9 +35,10 @@ namespace wawl {
 		//ハンドル
 		using GeneralHandle = ::HANDLE;
 
-	}
+#endif
 
-	namespace {
+	//ライブラリの都合的な型
+#ifdef TRUE
 
 		//基本的な汎用座標型
 		template <typename ValueType>
@@ -49,7 +51,7 @@ namespace wawl {
 
 			//コピーコンストラクタ
 			template <typename T>
-			explicit Coordinates(const Coordinates<T>& p_) :
+			Coordinates(const Coordinates<T>& p_) :
 				x(static_cast<ValueType>(p_.x)),
 				y(static_cast<ValueType>(p_.y)) {}
 
@@ -59,7 +61,7 @@ namespace wawl {
 				y(static_cast<ValueType>(y_)) {}
 
 			template <typename T>
-			inline void operator = (const Coordinates<T>& p_) {
+			void operator = (const Coordinates<T>& p_) {
 				x = static_cast<ValueType>(p_.x);
 				y = static_cast<ValueType>(p_.y);
 			}
@@ -77,26 +79,26 @@ namespace wawl {
 			using ValueType = typename std::underlying_type<EnumType>::type;
 
 			//内部の値を取得
-			inline ValueType& Get() {
+			ValueType& get() {
 				return vals_;
 			}
-			inline const ValueType& Get() const {
+			const ValueType& get() const {
 				return vals_;
 			}
-			inline ValueType& operator () () {
+			ValueType& operator () () {
 				return vals_;
 			}
-			inline const ValueType& operator () () const{
+			const ValueType& operator () () const{
 				return vals_;
 			}
 
 			//合成
-			inline _impl_UnifyEnum<EnumType>& Compose(const EnumType& val) {
+			_impl_UnifyEnum<EnumType>& compose(const EnumType& val) {
 				vals_ |= static_cast<ValueType>(val);
 				return *this;
 			}
-			inline _impl_UnifyEnum<EnumType>& operator | (const EnumType& val) {
-				return Compose(val);
+			_impl_UnifyEnum<EnumType>& operator | (const EnumType& val) {
+				return compose(val);
 			}
 
 		private:
@@ -104,9 +106,10 @@ namespace wawl {
 
 		};
 
-	}
+#endif
 
-	namespace {
+	//WinAPI構造体のラップ
+#ifdef TRUE
 
 		//セキュリティ指定子
 		class SecurityDesc {
@@ -116,19 +119,19 @@ namespace wawl {
 			}
 			SecurityDesc(const SecurityDesc& secDesc) = default;
 			SecurityDesc(SecurityDesc&& secDesc) :
-				secDesc_(std::move(secDesc.Get())) {}
+				secDesc_(std::move(secDesc.get())) {}
 
 			//内部の値を取得
-			inline ::SECURITY_DESCRIPTOR& Get() {
+			::SECURITY_DESCRIPTOR& get() {
 				return secDesc_;
 			}
-			inline const ::SECURITY_DESCRIPTOR& Get() const {
+			const ::SECURITY_DESCRIPTOR& get() const {
 				return secDesc_;
 			}
-			inline ::SECURITY_DESCRIPTOR& operator () () {
+			::SECURITY_DESCRIPTOR& operator () () {
 				return secDesc_;
 			}
-			inline const ::SECURITY_DESCRIPTOR& operator () () const{
+			const ::SECURITY_DESCRIPTOR& operator () () const{
 				return secDesc_;
 			}
 
@@ -139,7 +142,7 @@ namespace wawl {
 		//セキュリティ記述子
 		class SecurityAttrib{
 		public:
-			SecurityAttrib(bool doInheritHandle, SecurityDesc&& secDesc) {
+			SecurityAttrib(bool doInheritHandle, SecurityDesc& secDesc) {
 				secAttr_.nLength = sizeof(::SECURITY_ATTRIBUTES);
 				secAttr_.bInheritHandle = doInheritHandle;
 				secAttr_.lpSecurityDescriptor = &secDesc;
@@ -151,19 +154,19 @@ namespace wawl {
 			}
 			SecurityAttrib(const SecurityAttrib& secAttr) = default;
 			SecurityAttrib(SecurityAttrib&& secAttr) :
-				secAttr_(std::move(secAttr.Get())) {}
+				secAttr_(std::move(secAttr.get())) {}
 
 			//内部の値を取得
-			::SECURITY_ATTRIBUTES& Get() {
+			::SECURITY_ATTRIBUTES& get() {
 				return secAttr_;
 			}
-			const ::SECURITY_ATTRIBUTES& Get() const{
+			const ::SECURITY_ATTRIBUTES& get() const{
 				return secAttr_;
 			}
-			inline ::SECURITY_ATTRIBUTES& operator () () {
+			::SECURITY_ATTRIBUTES& operator () () {
 				return secAttr_;
 			}
-			inline const ::SECURITY_ATTRIBUTES& operator () () const {
+			const ::SECURITY_ATTRIBUTES& operator () () const {
 				return secAttr_;
 			}
 			
@@ -213,16 +216,16 @@ namespace wawl {
 			//ToDo : 生成関連追加
 
 			//内部の値を取得
-			inline GeneralHandle& Get() {
+			GeneralHandle& get() {
 				return fileHandle_;
 			}
-			inline const GeneralHandle& Get() const {
+			const GeneralHandle& get() const {
 				return fileHandle_;
 			}
-			inline GeneralHandle& operator () () {
+			GeneralHandle& operator () () {
 				return fileHandle_;
 			}
-			inline const GeneralHandle& operator () () const {
+			const GeneralHandle& operator () () const {
 				return fileHandle_;
 			}
 
@@ -235,17 +238,17 @@ namespace wawl {
 		class StartupInfo {
 		public:
 			StartupInfo(
-				const TString* desktopName,
-				const TString* wndTitle,
-				const Position* wndPos,
-				const Rectangle* wndRect,
-				const Rectangle* consoleBuf,
-				const ConsoleStrColors* consoleStrColors,
-				const ConsoleBackgroundColors* consoleBackgroundColors,
-				const WndShowModes* wndShowModes,
-				const FileHandle* stdInput,
-				const FileHandle* stdOutput,
-				const FileHandle* stdError
+				const TString* desktopName = nullptr,
+				const TString* wndTitle = nullptr,
+				const Position* wndPos = nullptr,
+				const Rectangle* wndRect = nullptr,
+				const Rectangle* consoleBuf = nullptr,
+				const ConsoleStrColors* consoleStrColors = nullptr,
+				const ConsoleBackgroundColors* consoleBackgroundColors = nullptr,
+				const WndShowModes* wndShowModes = nullptr,
+				const FileHandle* stdInput = nullptr,
+				const FileHandle* stdOutput = nullptr,
+				const FileHandle* stdError = nullptr
 				) {
 				::ZeroMemory(&suInfo_, sizeof(suInfo_));
 
@@ -271,19 +274,19 @@ namespace wawl {
 					suInfo_.dwYCountChars = consoleBuf->y;
 				//Consoleの文字色、背景色設定
 				if (consoleStrColors != nullptr)
-					suInfo_.dwFillAttribute |= consoleStrColors->Get();
+					suInfo_.dwFillAttribute |= consoleStrColors->get();
 				if (consoleBackgroundColors != nullptr)
-					suInfo_.dwFillAttribute |= consoleBackgroundColors->Get();
+					suInfo_.dwFillAttribute |= consoleBackgroundColors->get();
 				//Window表示形式の設定
 				if (wndShowModes != nullptr)
-					suInfo_.wShowWindow = wndShowModes->Get();
+					suInfo_.wShowWindow = wndShowModes->get();
 				//標準入力、出力、エラー出力ファイルの設定
 				if (stdInput != nullptr)
-					suInfo_.hStdInput = stdInput->Get();
+					suInfo_.hStdInput = stdInput->get();
 				if (stdOutput != nullptr)
-					suInfo_.hStdOutput = stdOutput->Get();
+					suInfo_.hStdOutput = stdOutput->get();
 				if (stdError != nullptr)
-					suInfo_.hStdError = stdError->Get();
+					suInfo_.hStdError = stdError->get();
 			}
 			StartupInfo(
 				const TString& desktopName,
@@ -312,19 +315,18 @@ namespace wawl {
 				&stdError
 				) {}
 			//ToDo : コンストラクタの種類増加
-			StartupInfo() = default;
 
 			//内部の値を取得
-			inline ::STARTUPINFO& Get() {
+			::STARTUPINFO& get() {
 				return suInfo_;
 			}
-			inline const ::STARTUPINFO& Get() const {
+			const ::STARTUPINFO& get() const {
 				return suInfo_;
 			}
-			inline ::STARTUPINFO& operator () () {
+			::STARTUPINFO& operator () () {
 				return suInfo_;
 			}
-			inline const ::STARTUPINFO& operator () () const {
+			const ::STARTUPINFO& operator () () const {
 				return suInfo_;
 			}
 
@@ -333,6 +335,6 @@ namespace wawl {
 
 		};
 
-	}
+#endif
 
 } //::wawl

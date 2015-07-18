@@ -1,59 +1,49 @@
 #pragma once
 
-#include "System.h"
+//WinAPI
+#include <Windows.h>
+//C++STL
 #include <unordered_map>
 
 namespace wawl {
 	namespace input {
+
+		//マウス関連
+#ifdef TRUE
+
+		//マウスのスクリーン座標を取得
+		inline Position getMousePos() {
+			LPPOINT posPtr;
+
+			::GetCursorPos(posPtr);
+			return Position{ posPtr->x, posPtr->y };
+		}
+		//マウスのスクリーン座標を設定
+		inline bool setMousePos(const Position& pos) {
+			return ::SetCursorPos(pos.x, pos.y) != 0;
+		}
+
+		//マウス表示カウントを足す
+		inline int addMouseShowCount(int num) {
+			for (int i = 0; i < num - 1; ++i)
+				::ShowCursor(true);
+			return ::ShowCursor(true);
+		}
+		//マウス表示カウントを引く
+		inline int subMouseShowCount(int num) {
+			for (int i = 0; i < num - 1; ++i)
+				::ShowCursor(false);
+			return ::ShowCursor(false);
+		}
+		//マウス表示カウントを取得
+		inline int getMouseShowCount() {
+			return (::ShowCursor(false), ::ShowCursor(true));
+		}
+
+#endif
 		
-		class Mouse final {
-		public:
-			Mouse() = delete;
-			Mouse(const Mouse&) = delete;
-			Mouse(Mouse&&) = delete;
-			void operator = (const Mouse&) = delete;
-
-			//マウスのスクリーン座標を取得
-			inline static Position GetPos() {
-				LPPOINT posPtr;
-
-				::GetCursorPos(posPtr);
-				return Position{ posPtr->x, posPtr->y };
-			}
-			//マウスのスクリーン座標を設定
-			inline static bool SetPos(const Position& p) {
-				return ::SetCursorPos(p.x, p.y) != 0;
-			}
-			//マウスを表示する
-			static bool Show() {
-				//既に表示されていたらfalse
-				if (showCount_ >= 0)
-					return false;
-
-				//表示されるまで繰り返す
-				while (showCount_ < 0)
-					showCount_ = ::ShowCursor(true);
-
-				return true;
-			}
-			//マウスを非表示にする
-			static bool Hide() {
-				//既に非表示ならfalse
-				if (showCount_ < 0)
-					return false;
-
-				//非表示になるまで繰り返す
-				while (showCount_ >= 0)
-					showCount_ = ::ShowCursor(false);
-
-				return true;
-			}
-
-		private:
-			static std::size_t showCount_;
-
-		};
-		std::size_t Mouse::showCount_ = 0;
+		//キー入力関連
+#ifdef TRUE
 
 		enum class Key : int {
 			MouseL = VK_LBUTTON,
@@ -229,121 +219,15 @@ namespace wawl {
 			_impl_EndEnum = 0xFF
 		};
 
-		enum class MethodGetKeystate {
-			Static,
-			Dynamic
-		};
+		//キーが押されているか取得
+		bool getKeyState(const Key key, bool excludeLastResult = true) {
+			if (excludeLastResult)
+				return (::GetAsyncKeyState(static_cast<int>(key)) & 0x8000) != 0;
+			else
+				return (::GetAsyncKeyState(static_cast<int>(key)) & 0x0001) != 0;
+		}
 
-		class KeyState {
-		public:
-			//このフレームに押されているか
-			inline bool Pushed() const {
-				return nowState_;
-			}
-			//クリックした瞬間かどうか
-			inline bool Clicked() const {
-				return !beforeState_ && nowState_;
-			}
-			//キーを離した瞬間かどうか
-			inline bool Released() const {
-				return beforeState_ && !nowState_;
-			}
-
-			//ターゲットキーを設定
-			inline void SetTarget(const Key key) {
-				target_ = key;
-			}
-			//stateをアップデート
-			inline KeyState& Update() {
-				beforeState_ = nowState_;
-				nowState_ = (::GetAsyncKeyState(static_cast<int>(target_)) & 0x8000) != 0;
-
-				return *this;
-			}
-
-			KeyState() = default;
-			KeyState(const KeyState&) = default;
-			KeyState(Key key) :
-				target_(key) {}
-
-			KeyState& operator=(KeyState&& other) {
-				if (this != &other){
-					this->target_ = std::move(other.target_);
-					this->beforeState_ = std::move(other.beforeState_);
-					this->nowState_ = std::move(other.nowState_);
-				}
-
-				return *this;
-			}
-
-		private:
-			//ターゲットキー
-			Key target_;
-			//過去のステートと現在のステート
-			bool beforeState_ = false, nowState_ = false;
-
-		};
-
-		class Keyboard final {
-		public:
-			Keyboard() = delete;
-			Keyboard(const Keyboard&) = delete;
-			Keyboard(Keyboard&&) = delete;
-			void operator = (const Keyboard&) = delete;
-
-			static const KeyState& StaticGet(const Key key) {
-				if (keyStates_.find(key) == keyStates_.end())
-					keyStates_[key] = std::move(KeyState{ key }),
-					keyStates_[key].Update();
-
-				return keyStates_[key];
-			}
-
-			static const KeyState& DynamicGet(const Key key) {
-				if (keyStates_.find(key) == keyStates_.end())
-					keyStates_[key] = std::move(KeyState{ key }),
-					keyStates_[key].Update();
-				else
-					keyStates_[key].Update();
-
-				return keyStates_[key];
-			}
-
-			inline static const KeyState& Get(const Key key) {
-				//初めての呼び出しならメモリを事前に確保
-				static bool isFirst = true;
-				if (isFirst)
-					keyStates_.reserve(static_cast<std::size_t>(Key::_impl_EndEnum)),
-					isFirst = false;
-
-				switch (method_) {
-				case MethodGetKeystate::Static: {
-					return StaticGet(key);
-				}
-				case MethodGetKeystate::Dynamic: {
-					return DynamicGet(key);
-				}
-				default:
-					return StaticGet(key);
-				}
-			}
-
-			inline static void Update() {
-				for (auto&& key : keyStates_)
-					key.second.Update();
-			}
-
-			inline static void SetMethod(const MethodGetKeystate m) {
-				method_ = m;
-			}
-
-		private:
-			static std::unordered_map < Key, KeyState > keyStates_;
-			static MethodGetKeystate method_;
-
-		};
-		std::unordered_map < Key, KeyState > Keyboard::keyStates_;
-		MethodGetKeystate Keyboard::method_ = MethodGetKeystate::Static;
+#endif
 
 	} //::wawl::input
 } //::wawl

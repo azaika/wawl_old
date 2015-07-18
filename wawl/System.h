@@ -18,17 +18,17 @@ namespace wawl {
 		using AppHandle = HINSTANCE;
 
 		//このアプリのAppHandleを取得
-		inline AppHandle GetAppHandle() {
+		inline AppHandle getAppHandle() {
 			return static_cast<HINSTANCE>(::GetModuleHandle(0));
 		}
 
 		//完全なコマンドライン引数を取得
-		inline TString GetFullCmdLine() {
+		inline TString getFullCmdLine() {
 			return ::GetCommandLine();
 		}
 
 		//システムクロックをミリ秒単位で取得
-		inline std::size_t GetTimeMilisec() {
+		inline std::size_t getTimeMilisec() {
 			return static_cast<std::size_t>(timeGetTime());
 		}
 
@@ -40,16 +40,16 @@ namespace wawl {
 			void operator = (const _impl_System&) = delete;
 
 			//コマンドライン引数を取得
-			friend inline TString GetCmdLine() {
+			friend inline TString getCmdLine() {
 				return cmdArgStr_;
 			}
 			
-			friend inline int GetWindowShowmode() {
+			friend inline int getWndShowmode() {
 				return windowShowmode_;
 			}
 
 			//システムのタイマー分解能を変更。必ず終わったあとResetTimeResolution()を呼び出す
-			friend inline bool ChangeTimeResolution(unsigned int res) {
+			friend inline bool changeTimeResolution(unsigned int res) {
 				return (
 					sysRes_ == 0 ?
 					sysRes_ = res, ::timeBeginPeriod(res) == TIMERR_NOERROR :
@@ -57,7 +57,7 @@ namespace wawl {
 					);
 			}
 			//システムのタイマー分解能を元に戻す
-			friend inline bool ResetTimeResolution() {
+			friend inline bool resetTimeResolution() {
 				int tmpRes = sysRes_;
 
 				return (
@@ -67,7 +67,7 @@ namespace wawl {
 					);
 			}
 
-			static void SetWinMainArgs(const TString& cmdLine, int cmdShow) {
+			static void setWinMainArgs(const TString& cmdLine, int cmdShow) {
 				//初回呼び出しかどうか
 				static bool isFirst = true;
 
@@ -92,7 +92,7 @@ namespace wawl {
 		int _impl_System::windowShowmode_ = 0;
 		int _impl_System::sysRes_ = 0;
 
-		bool RunCmdLine(const TString& cmdLine, bool showWindow = false) {
+		bool runCmdLine(const TString& cmdLine, bool showWindow = false) {
 
 			STARTUPINFO si;
 			PROCESS_INFORMATION pi = {};
@@ -125,7 +125,7 @@ int WINAPI _tWinMain(
 	) {
 	using namespace wawl;
 
-	sys::_impl_System::SetWinMainArgs(cmdLine, cmdShow);
+	sys::_impl_System::setWinMainArgs(cmdLine, cmdShow);
 
 	WawlMain();
 
