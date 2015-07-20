@@ -1,9 +1,9 @@
 #pragma once
 
-//WinAPI
-#include <Windows.h>
+//wawl Header
+#include "BaseType.h"
 //C++STL
-#include <unordered_map>
+#include <array>
 
 namespace wawl {
 	namespace input {
@@ -220,11 +220,23 @@ namespace wawl {
 		};
 
 		//キーが押されているか取得
-		bool getKeyState(const Key key, bool excludeLastResult = true) {
-			if (excludeLastResult)
-				return (::GetAsyncKeyState(static_cast<int>(key)) & 0x8000) != 0;
-			else
-				return (::GetAsyncKeyState(static_cast<int>(key)) & 0x0001) != 0;
+		inline bool getKeyState(const Key key, bool doGetToggle = false) {
+			return (::GetAsyncKeyState(static_cast<int>(key)) & (doGetToggle ? 0x0001 : 0x8000)) != 0;
+		}
+
+		//すべてのキー
+		using Allkey = std::array < bool, static_cast<std::size_t>(Key::_impl_EndEnum) + 1 > ;
+		//すべてのキー入力状態を一括取得
+		Allkey getKeyboardState(bool doGetToggle = false) {
+			Byte keyboard[static_cast<std::size_t>(Key::_impl_EndEnum) + 1];
+			if (::GetKeyboardState(keyboard) == false)
+				throw std::runtime_error{ "Failed to GetKeyboardState." };
+
+			Allkey ret;
+			for (int i = 0; i < ret.size(); ++i)
+				ret[i] = (keyboard[i] & (doGetToggle ? 0x01 : 0x80)) != 0;
+
+			return ret;
 		}
 
 #endif

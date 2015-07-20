@@ -27,6 +27,8 @@ namespace wawl {
 		//汎用文字列型
 		using TString = std::basic_string < TChar > ;
 
+		//符号無し8bit整数
+		using Byte = ::BYTE;
 		//符号無し16bit整数
 		using Word = ::WORD;
 		//符号無し32bit整数
@@ -78,6 +80,15 @@ namespace wawl {
 			//enumの内部型
 			using ValueType = typename std::underlying_type<EnumType>::type;
 
+			_impl_UnifyEnum() = default;
+			_impl_UnifyEnum(const _impl_UnifyEnum<ValueType>&) = default;
+			_impl_UnifyEnum<ValueType>& operator = (const _impl_UnifyEnum<ValueType>&) = default;
+
+			_impl_UnifyEnum(const std::initializer_list<ValueType>& valList) {
+				for (auto&& val : valList)
+					vals_ |= val;
+			}
+
 			//内部の値を取得
 			ValueType& get() {
 				return vals_;
@@ -93,12 +104,20 @@ namespace wawl {
 			}
 
 			//合成
-			_impl_UnifyEnum<EnumType>& compose(const EnumType& val) {
+			_impl_UnifyEnum<ValueType>& compose(const ValueType& val) {
 				vals_ |= static_cast<ValueType>(val);
 				return *this;
 			}
-			_impl_UnifyEnum<EnumType>& operator | (const EnumType& val) {
+			_impl_UnifyEnum<ValueType>& operator |= (const ValueType& val) {
 				return compose(val);
+			}
+			_impl_UnifyEnum<ValueType>& operator | (const EnumType& val) const {
+				return _impl_UnifyEnum < ValueType > {vals_ | val};
+			}
+
+			//含まれているかどうか
+			bool isIncluded(const ValueType& val) {
+				return (vals_ & val) == val;
 			}
 
 		private:
@@ -118,8 +137,6 @@ namespace wawl {
 				::InitializeSecurityDescriptor(&secDesc_, SECURITY_DESCRIPTOR_REVISION);
 			}
 			SecurityDesc(const SecurityDesc& secDesc) = default;
-			SecurityDesc(SecurityDesc&& secDesc) :
-				secDesc_(std::move(secDesc.get())) {}
 
 			//内部の値を取得
 			::SECURITY_DESCRIPTOR& get() {
@@ -182,16 +199,16 @@ namespace wawl {
 			Red = FOREGROUND_RED,
 			Intensity = FOREGROUND_INTENSITY
 		};
-		using ConsoleStrColors = _impl_UnifyEnum < ConsoleStrColor > ;
+		using UnifyConsoleStrColor = _impl_UnifyEnum < ConsoleStrColor > ;
 
 		//CUIでの背景色
-		enum class ConsoleBackgroundColor : Dword{
+		enum class ConsoleBgColor : Dword{
 			Blue = BACKGROUND_BLUE,
 			Green = BACKGROUND_GREEN,
 			Red = BACKGROUND_RED,
 			Intensity = BACKGROUND_INTENSITY
 		};
-		using ConsoleBackgroundColors = _impl_UnifyEnum < ConsoleBackgroundColor > ;
+		using UnifyConsoleBgColor = _impl_UnifyEnum < ConsoleBgColor > ;
 
 		//アプリケーション起動時のオプション
 		enum class StartupOption : Dword {
@@ -202,37 +219,98 @@ namespace wawl {
 			RelateTitleWithAppID = STARTF_TITLEISAPPID,
 			RelateTitleWithLnk = STARTF_TITLEISLINKNAME
 		};
-		using StartupInfoes = _impl_UnifyEnum < StartupOption > ;
+		using UnifyStartupOption = _impl_UnifyEnum < StartupOption > ;
 
 		//Window表示形式
 		enum class WndShowMode : Word {
-			//ToDo : SW_Hoge系マクロのリネーム追加
+			ForceMinimize = SW_FORCEMINIMIZE,
+			Hide = SW_HIDE,
+			Maximize = SW_MAXIMIZE,
+			Minimize = SW_MINIMIZE,
+			Restore = SW_RESTORE,
+			Show = SW_SHOW,
+			DefaultShow = SW_SHOWDEFAULT,
+			MaximizedShow = SW_SHOWMAXIMIZED,
+			MinimizedShow = SW_SHOWMINIMIZED,
+			InactivateMinimized = SW_SHOWMINNOACTIVE,
+			NoactivateShow = SW_SHOWNA,
+			NoactivateNormalShow = SW_SHOWNOACTIVATE,
+			NormalShow = SW_SHOWNORMAL
 		};
-		using WndShowModes = _impl_UnifyEnum < WndShowMode > ;
+		using UnifyWndShowMode = _impl_UnifyEnum < WndShowMode > ;
+
+		//アクセス指定子
+		enum class AccessDesc : Dword {
+			All = GENERIC_ALL,
+			Execute = GENERIC_EXECUTE,
+			Read = GENERIC_READ,
+			Write = GENERIC_WRITE,
+			Delete = DELETE,
+			ReadSecurityCtrl = READ_CONTROL,
+			EnableSync = SYNCHRONIZE,
+			WriteDac = WRITE_DAC,
+			ChangeOwner = WRITE_OWNER,
+			RightAll = STANDARD_RIGHTS_ALL,
+			RightNormal = STANDARD_RIGHTS_REQUIRED,
+			AccessSysSecurity = ACCESS_SYSTEM_SECURITY,
+			AllowMaximum = MAXIMUM_ALLOWED,
+			RightAllSpecificDesc = SPECIFIC_RIGHTS_ALL
+		};
+		using UnifyAccessDesc = _impl_UnifyEnum < AccessDesc > ;
+
+		//ファイルシェア形式
+		enum class FileSharePermit : Dword {
+			Delete = FILE_SHARE_DELETE,
+			Read = FILE_SHARE_READ,
+			Write = FILE_SHARE_WRITE
+		};
+		using UnifyFileSharePermit = _impl_UnifyEnum < FileSharePermit > ;
+
+		//ファイル生成規定
+		enum class FileCreateProv : Dword {
+			New = CREATE_NEW,
+			AlwaysNew = CREATE_ALWAYS,
+			OpenExisting = OPEN_EXISTING,
+			AlwaysOpen = OPEN_ALWAYS,
+			ClearExisting = TRUNCATE_EXISTING
+		};
+		using UnifyFileCreateProv = _impl_UnifyEnum < FileCreateProv > ;
+
+		//ファイルの属性記述子
+		enum class FileAttr : Dword {
+			Archive = FILE_ATTRIBUTE_ARCHIVE,
+			Encrypt = FILE_ATTRIBUTE_ENCRYPTED,
+			Hide = FILE_ATTRIBUTE_HIDDEN,
+			Normal = FILE_ATTRIBUTE_NORMAL,
+			NotIndexed = FILE_ATTRIBUTE_NOT_CONTENT_INDEXED,
+			Offline = FILE_ATTRIBUTE_OFFLINE,
+			ReadOnly = FILE_ATTRIBUTE_READONLY,
+			System = FILE_ATTRIBUTE_SYSTEM,
+			Tmporary = FILE_ATTRIBUTE_TEMPORARY,
+
+			NoCaching = FILE_FLAG_WRITE_THROUGH,
+			Overlapp = FILE_FLAG_OVERLAPPED,
+			NoBuffering = FILE_FLAG_NO_BUFFERING,
+			RandomAccess = FILE_FLAG_RANDOM_ACCESS,
+			SequentialAccess = FILE_FLAG_SEQUENTIAL_SCAN,
+			CloseToDelete = FILE_FLAG_DELETE_ON_CLOSE,
+			Buckup = FILE_FLAG_BACKUP_SEMANTICS,
+			UsePosixSemantics = FILE_FLAG_POSIX_SEMANTICS,
+			NoReparsing = FILE_FLAG_OPEN_REPARSE_POINT,
+			NoRecall = FILE_FLAG_OPEN_NO_RECALL,
+
+			Anonymous = SECURITY_ANONYMOUS,
+			Identification = SECURITY_IDENTIFICATION,
+			Impersonation = SECURITY_IMPERSONATION,
+			Delegation = SECURITY_IMPERSONATION,
+			DynamicTracking = SECURITY_CONTEXT_TRACKING,
+			EffectiveOnly = SECURITY_EFFECTIVE_ONLY,
+			EnableSecurityCamouflage = SECURITY_SQOS_PRESENT
+		};
+		using UnifyFileAttr = _impl_UnifyEnum < FileAttr > ;
 
 		//ファイルハンドル
-		class FileHandle {
-		public:
-			//ToDo : 生成関連追加
-
-			//内部の値を取得
-			GeneralHandle& get() {
-				return fileHandle_;
-			}
-			const GeneralHandle& get() const {
-				return fileHandle_;
-			}
-			GeneralHandle& operator () () {
-				return fileHandle_;
-			}
-			const GeneralHandle& operator () () const {
-				return fileHandle_;
-			}
-
-		private:
-			GeneralHandle fileHandle_ = nullptr;
-
-		};
+		using FileHandle = GeneralHandle;
 
 		//アプリケーション起動のための情報
 		class StartupInfo {
@@ -243,12 +321,13 @@ namespace wawl {
 				const Position* wndPos = nullptr,
 				const Rectangle* wndRect = nullptr,
 				const Rectangle* consoleBuf = nullptr,
-				const ConsoleStrColors* consoleStrColors = nullptr,
-				const ConsoleBackgroundColors* consoleBackgroundColors = nullptr,
-				const WndShowModes* wndShowModes = nullptr,
-				const FileHandle* stdInput = nullptr,
-				const FileHandle* stdOutput = nullptr,
-				const FileHandle* stdError = nullptr
+				const UnifyConsoleStrColor* consoleStrColors = nullptr,
+				const UnifyConsoleBgColor* consoleBgColors = nullptr,
+				const UnifyStartupOption* startupOptions = nullptr,
+				const UnifyWndShowMode* wndShowModes = nullptr,
+				const FileHandle stdInput = nullptr,
+				const FileHandle stdOutput = nullptr,
+				const FileHandle stdError = nullptr
 				) {
 				::ZeroMemory(&suInfo_, sizeof(suInfo_));
 
@@ -275,18 +354,18 @@ namespace wawl {
 				//Consoleの文字色、背景色設定
 				if (consoleStrColors != nullptr)
 					suInfo_.dwFillAttribute |= consoleStrColors->get();
-				if (consoleBackgroundColors != nullptr)
-					suInfo_.dwFillAttribute |= consoleBackgroundColors->get();
+				if (consoleBgColors != nullptr)
+					suInfo_.dwFillAttribute |= consoleBgColors->get();
 				//Window表示形式の設定
 				if (wndShowModes != nullptr)
 					suInfo_.wShowWindow = wndShowModes->get();
 				//標準入力、出力、エラー出力ファイルの設定
 				if (stdInput != nullptr)
-					suInfo_.hStdInput = stdInput->get();
+					suInfo_.hStdInput = stdInput;
 				if (stdOutput != nullptr)
-					suInfo_.hStdOutput = stdOutput->get();
+					suInfo_.hStdOutput = stdOutput;
 				if (stdError != nullptr)
-					suInfo_.hStdError = stdError->get();
+					suInfo_.hStdError = stdError;
 			}
 			StartupInfo(
 				const TString& desktopName,
@@ -294,9 +373,10 @@ namespace wawl {
 				const Position& wndPos,
 				const Rectangle& wndRect,
 				const Rectangle& consoleBuf,
-				const ConsoleStrColors& consoleStrColors,
-				const ConsoleBackgroundColors& consoleBackgroundColors,
-				const WndShowModes& wndShowModes,
+				const UnifyConsoleStrColor& consoleStrColors,
+				const UnifyConsoleBgColor& consoleBgColors,
+				const UnifyStartupOption& startupOptions,
+				const UnifyWndShowMode& wndShowModes,
 				const FileHandle& stdInput,
 				const FileHandle& stdOutput,
 				const FileHandle& stdError
@@ -308,11 +388,12 @@ namespace wawl {
 				&wndRect,
 				&consoleBuf,
 				&consoleStrColors,
-				&consoleBackgroundColors,
+				&consoleBgColors,
+				&startupOptions,
 				&wndShowModes,
-				&stdInput,
-				&stdOutput,
-				&stdError
+				stdInput,
+				stdOutput,
+				stdError
 				) {}
 			//ToDo : コンストラクタの種類増加
 

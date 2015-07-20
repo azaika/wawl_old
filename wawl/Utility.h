@@ -1,6 +1,6 @@
 #pragma once
 
-#include "System.h"
+#include "BaseType.h"
 
 namespace wawl {
 	namespace util {
@@ -11,12 +11,12 @@ namespace wawl {
 			size_t wstrLen;
 			//サイズ取得&変換エラーチェック
 			if (mbstowcs_s(&wstrLen, nullptr, 0, str.c_str(), 0) != 0)
-				return WString{};
+				throw std::runtime_error{ "Falied to mbstowcs_s" };
 
 			WString wstrBuf;
 			wstrBuf.reserve(wstrLen);
 			if (mbstowcs_s(&wstrLen, &wstrBuf[0], wstrLen, str.c_str(), str.size()) != 0)
-				return WString{};
+				throw std::runtime_error{ "Falied to mbstowcs_s" };
 
 			return wstrBuf;
 
@@ -31,34 +31,32 @@ namespace wawl {
 			size_t astrLen;
 			//サイズ取得&変換エラーチェック
 			if (wcstombs_s(&astrLen, nullptr, 0, wstr.c_str(), 0) != 0)
-				return AString{};
+				throw std::runtime_error{ "Falied to wcstombs_s" };
 
 			AString astrBuf;
 			astrBuf.reserve(astrLen);
 			if (wcstombs_s(&astrLen, &astrBuf[0], astrLen, wstr.c_str(), wstr.size()) != 0)
-				return AString{};
+				throw std::runtime_error{ "Falied to wcstombs_s" };
 
 			return astrBuf;
 		}
 
 #ifdef UNICODE
 		
-		inline const TString& toTString(const WString& str) {
-			return str;
+		inline TString& toTString(const WString& str) {
+			return TString{ str };
 		}
-		inline const TString& toTString(const AString& str) {
-			auto&& ret = toWString(str);
-			return ret;
+		inline TString& toTString(const AString& str) {
+			return toWString(str);
 		}
 
 #else //UNICODE
 
-		inline const TString& toTString(const AString& str) {
-			return str;
+		inline TString& toTString(const AString& str) {
+			return TString{ str };
 		}
-		inline const TString& toTString(const WString& str) {
-			auto&& ret = toWString(str);
-			return ret;
+		inline TString& toTString(const WString& str) {
+			return toWString(str);
 		}
 
 #endif //UNICODE
