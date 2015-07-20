@@ -81,8 +81,8 @@ namespace wawl {
 			using ValueType = typename std::underlying_type<EnumType>::type;
 
 			_impl_UnifyEnum() = default;
-			_impl_UnifyEnum(const _impl_UnifyEnum<ValueType>&) = default;
-			_impl_UnifyEnum<ValueType>& operator = (const _impl_UnifyEnum<ValueType>&) = default;
+			_impl_UnifyEnum(const _impl_UnifyEnum<EnumType>&) = default;
+			_impl_UnifyEnum<EnumType>& operator = (const _impl_UnifyEnum<EnumType>&) = default;
 
 			_impl_UnifyEnum(const std::initializer_list<ValueType>& valList) {
 				for (auto&& val : valList)

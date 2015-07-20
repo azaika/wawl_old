@@ -233,7 +233,7 @@ namespace wawl {
 				throw std::runtime_error{ "Failed to GetKeyboardState." };
 
 			Allkey ret;
-			for (int i = 0; i < ret.size(); ++i)
+			for (std::size_t i = 0; i < ret.size(); ++i)
 				ret[i] = (keyboard[i] & (doGetToggle ? 0x01 : 0x80)) != 0;
 
 			return ret;
