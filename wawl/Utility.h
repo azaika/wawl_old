@@ -5,6 +5,9 @@
 namespace wawl {
 	namespace util {
 
+		//String関連
+#ifdef TRUE
+
 		//AStringをWStringに変換します
 		WString toWString(const AString& str) {
 			//変換後のサイズ
@@ -43,23 +46,35 @@ namespace wawl {
 
 #ifdef UNICODE
 		
-		inline TString& toTString(const WString& str) {
+		inline TString toTString(const WString& str) {
 			return TString{ str };
 		}
-		inline TString& toTString(const AString& str) {
+		inline TString toTString(const AString& str) {
 			return toWString(str);
 		}
 
 #else //UNICODE
 
-		inline TString& toTString(const AString& str) {
+		inline TString toTString(const AString& str) {
 			return TString{ str };
 		}
-		inline TString& toTString(const WString& str) {
+		inline TString toTString(const WString& str) {
 			return toWString(str);
 		}
 
 #endif //UNICODE
+
+#endif //TRUE
+
+#ifdef TRUE
+
+		template <typename EnumType>
+		inline auto unpackEnum(const EnumType& val)
+			-> typename std::underlying_type<EnumType>::type {
+			return static_cast<typename std::underlying_type<EnumType>::type>(val);
+		}
+
+#endif //TRUE
 
 	} //::wawl::util
 } //::wawl

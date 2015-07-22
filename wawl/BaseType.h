@@ -84,6 +84,8 @@ namespace wawl {
 			_impl_UnifyEnum(const _impl_UnifyEnum<EnumType>&) = default;
 			_impl_UnifyEnum<EnumType>& operator = (const _impl_UnifyEnum<EnumType>&) = default;
 
+			_impl_UnifyEnum(const EnumType& val) :
+				vals_(static_cast<ValueType>(val)) {}
 			_impl_UnifyEnum(const std::initializer_list<ValueType>& valList) {
 				for (auto&& val : valList)
 					vals_ |= val;
@@ -136,7 +138,7 @@ namespace wawl {
 			SecurityDesc() {
 				::InitializeSecurityDescriptor(&secDesc_, SECURITY_DESCRIPTOR_REVISION);
 			}
-			SecurityDesc(const SecurityDesc& secDesc) = default;
+			SecurityDesc(const SecurityDesc&) = default;
 
 			//内部の値を取得
 			::SECURITY_DESCRIPTOR& get() {
@@ -164,7 +166,7 @@ namespace wawl {
 				secAttr_.bInheritHandle = doInheritHandle;
 				secAttr_.lpSecurityDescriptor = &secDesc;
 			}
-			SecurityAttrib(bool doInheritHandle = false) {
+			explicit SecurityAttrib(bool doInheritHandle = false) {
 				secAttr_.nLength = sizeof(::SECURITY_ATTRIBUTES);
 				secAttr_.bInheritHandle = doInheritHandle;
 				secAttr_.lpSecurityDescriptor = nullptr;
@@ -212,9 +214,9 @@ namespace wawl {
 
 		//アプリケーション起動時のオプション
 		enum class StartupOption : Dword {
-			RunFullscreen = STARTF_RUNFULLSCREEN,
+			Fullscreen = STARTF_RUNFULLSCREEN,
 			ForceChangeCursor = STARTF_FORCEONFEEDBACK,
-			ForceImmutableCursor = STARTF_FORCEOFFFEEDBACK,
+			ForceImmutCursor = STARTF_FORCEOFFFEEDBACK,
 			NoPinningTaskbar = STARTF_PREVENTPINNING || STARTF_TITLEISAPPID,
 			RelateTitleWithAppID = STARTF_TITLEISAPPID,
 			RelateTitleWithLnk = STARTF_TITLEISLINKNAME
@@ -238,184 +240,7 @@ namespace wawl {
 			NormalShow = SW_SHOWNORMAL
 		};
 		using UnifyWndShowMode = _impl_UnifyEnum < WndShowMode > ;
-
-		//アクセス指定子
-		enum class AccessDesc : Dword {
-			All = GENERIC_ALL,
-			Execute = GENERIC_EXECUTE,
-			Read = GENERIC_READ,
-			Write = GENERIC_WRITE,
-			Delete = DELETE,
-			ReadSecurityCtrl = READ_CONTROL,
-			EnableSync = SYNCHRONIZE,
-			WriteDac = WRITE_DAC,
-			ChangeOwner = WRITE_OWNER,
-			RightAll = STANDARD_RIGHTS_ALL,
-			RightNormal = STANDARD_RIGHTS_REQUIRED,
-			AccessSysSecurity = ACCESS_SYSTEM_SECURITY,
-			AllowMaximum = MAXIMUM_ALLOWED,
-			RightAllSpecificDesc = SPECIFIC_RIGHTS_ALL
-		};
-		using UnifyAccessDesc = _impl_UnifyEnum < AccessDesc > ;
-
-		//ファイルシェア形式
-		enum class FileSharePermit : Dword {
-			Delete = FILE_SHARE_DELETE,
-			Read = FILE_SHARE_READ,
-			Write = FILE_SHARE_WRITE
-		};
-		using UnifyFileSharePermit = _impl_UnifyEnum < FileSharePermit > ;
-
-		//ファイル生成規定
-		enum class FileCreateProv : Dword {
-			New = CREATE_NEW,
-			AlwaysNew = CREATE_ALWAYS,
-			OpenExisting = OPEN_EXISTING,
-			AlwaysOpen = OPEN_ALWAYS,
-			ClearExisting = TRUNCATE_EXISTING
-		};
-		using UnifyFileCreateProv = _impl_UnifyEnum < FileCreateProv > ;
-
-		//ファイルの属性記述子
-		enum class FileAttr : Dword {
-			Archive = FILE_ATTRIBUTE_ARCHIVE,
-			Encrypt = FILE_ATTRIBUTE_ENCRYPTED,
-			Hide = FILE_ATTRIBUTE_HIDDEN,
-			Normal = FILE_ATTRIBUTE_NORMAL,
-			NotIndexed = FILE_ATTRIBUTE_NOT_CONTENT_INDEXED,
-			Offline = FILE_ATTRIBUTE_OFFLINE,
-			ReadOnly = FILE_ATTRIBUTE_READONLY,
-			System = FILE_ATTRIBUTE_SYSTEM,
-			Tmporary = FILE_ATTRIBUTE_TEMPORARY,
-
-			NoCaching = FILE_FLAG_WRITE_THROUGH,
-			Overlapp = FILE_FLAG_OVERLAPPED,
-			NoBuffering = FILE_FLAG_NO_BUFFERING,
-			RandomAccess = FILE_FLAG_RANDOM_ACCESS,
-			SequentialAccess = FILE_FLAG_SEQUENTIAL_SCAN,
-			CloseToDelete = FILE_FLAG_DELETE_ON_CLOSE,
-			Buckup = FILE_FLAG_BACKUP_SEMANTICS,
-			UsePosixSemantics = FILE_FLAG_POSIX_SEMANTICS,
-			NoReparsing = FILE_FLAG_OPEN_REPARSE_POINT,
-			NoRecall = FILE_FLAG_OPEN_NO_RECALL,
-
-			Anonymous = SECURITY_ANONYMOUS,
-			Identification = SECURITY_IDENTIFICATION,
-			Impersonation = SECURITY_IMPERSONATION,
-			Delegation = SECURITY_IMPERSONATION,
-			DynamicTracking = SECURITY_CONTEXT_TRACKING,
-			EffectiveOnly = SECURITY_EFFECTIVE_ONLY,
-			EnableSecurityCamouflage = SECURITY_SQOS_PRESENT
-		};
-		using UnifyFileAttr = _impl_UnifyEnum < FileAttr > ;
-
-		//ファイルハンドル
-		using FileHandle = GeneralHandle;
-
-		//アプリケーション起動のための情報
-		class StartupInfo {
-		public:
-			StartupInfo(
-				const TString* desktopName = nullptr,
-				const TString* wndTitle = nullptr,
-				const Position* wndPos = nullptr,
-				const Rectangle* wndRect = nullptr,
-				const Rectangle* consoleBuf = nullptr,
-				const UnifyConsoleStrColor* consoleStrColors = nullptr,
-				const UnifyConsoleBgColor* consoleBgColors = nullptr,
-				const UnifyStartupOption* startupOptions = nullptr,
-				const UnifyWndShowMode* wndShowModes = nullptr,
-				const FileHandle stdInput = nullptr,
-				const FileHandle stdOutput = nullptr,
-				const FileHandle stdError = nullptr
-				) {
-				::ZeroMemory(&suInfo_, sizeof(suInfo_));
-
-				//サイズ設定
-				suInfo_.cb = sizeof(::STARTUPINFO);
-				//デスクトップ名指定
-				if (desktopName != nullptr)
-					suInfo_.lpDesktop = const_cast<TChar*>(desktopName->c_str());
-				//Windowのタイトル指定
-				if (wndTitle != nullptr)
-					suInfo_.lpTitle = const_cast<TChar*>(wndTitle->c_str());
-				//Windowの座標設定
-				if (wndPos != nullptr)
-					suInfo_.dwX = wndPos->x,
-					suInfo_.dwY = wndPos->y;
-				//Windowの大きさ設定
-				if (wndRect != nullptr)
-					suInfo_.dwXSize = wndRect->x,
-					suInfo_.dwYSize = wndRect->y;
-				//Consoleのバッファーの大きさ設定
-				if (consoleBuf != nullptr)
-					suInfo_.dwXCountChars = consoleBuf->x,
-					suInfo_.dwYCountChars = consoleBuf->y;
-				//Consoleの文字色、背景色設定
-				if (consoleStrColors != nullptr)
-					suInfo_.dwFillAttribute |= consoleStrColors->get();
-				if (consoleBgColors != nullptr)
-					suInfo_.dwFillAttribute |= consoleBgColors->get();
-				//Window表示形式の設定
-				if (wndShowModes != nullptr)
-					suInfo_.wShowWindow = wndShowModes->get();
-				//標準入力、出力、エラー出力ファイルの設定
-				if (stdInput != nullptr)
-					suInfo_.hStdInput = stdInput;
-				if (stdOutput != nullptr)
-					suInfo_.hStdOutput = stdOutput;
-				if (stdError != nullptr)
-					suInfo_.hStdError = stdError;
-			}
-			StartupInfo(
-				const TString& desktopName,
-				const TString& wndTitle,
-				const Position& wndPos,
-				const Rectangle& wndRect,
-				const Rectangle& consoleBuf,
-				const UnifyConsoleStrColor& consoleStrColors,
-				const UnifyConsoleBgColor& consoleBgColors,
-				const UnifyStartupOption& startupOptions,
-				const UnifyWndShowMode& wndShowModes,
-				const FileHandle& stdInput,
-				const FileHandle& stdOutput,
-				const FileHandle& stdError
-				) :
-				StartupInfo(
-				&desktopName,
-				&wndTitle,
-				&wndPos,
-				&wndRect,
-				&consoleBuf,
-				&consoleStrColors,
-				&consoleBgColors,
-				&startupOptions,
-				&wndShowModes,
-				stdInput,
-				stdOutput,
-				stdError
-				) {}
-			//ToDo : コンストラクタの種類増加
-
-			//内部の値を取得
-			::STARTUPINFO& get() {
-				return suInfo_;
-			}
-			const ::STARTUPINFO& get() const {
-				return suInfo_;
-			}
-			::STARTUPINFO& operator () () {
-				return suInfo_;
-			}
-			const ::STARTUPINFO& operator () () const {
-				return suInfo_;
-			}
-
-		private:
-			::STARTUPINFO suInfo_;
-
-		};
-
+		
 #endif
 
 } //::wawl

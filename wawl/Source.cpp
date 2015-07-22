@@ -1,9 +1,14 @@
 #include "System.h"
 #include "Input.h"
+#include "Utility.h"
+#include "FileSystem.h"
+#include "Window.h"
 
 void WawlMain() {
 	using namespace wawl;
 	using namespace input;
+
+	util::unpackEnum(fs::AccessDesc::All);
 
 	while (Sleep(1), true) {
 
