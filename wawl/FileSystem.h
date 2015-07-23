@@ -8,6 +8,103 @@
 namespace wawl {
 	namespace fs {
 
+		//ファイルハンドル
+		using FileHandle = ::HANDLE;
+
+		//セキュリティ指定子
+		class SecurityDesc {
+		public:
+			SecurityDesc() {
+				::InitializeSecurityDescriptor(&secDesc_, SECURITY_DESCRIPTOR_REVISION);
+			}
+			SecurityDesc(const SecurityDesc&) = default;
+
+			//内部の値を取得
+			::SECURITY_DESCRIPTOR& get() {
+				return secDesc_;
+			}
+			const ::SECURITY_DESCRIPTOR& get() const {
+				return secDesc_;
+			}
+			::SECURITY_DESCRIPTOR& operator () () {
+				return secDesc_;
+			}
+			const ::SECURITY_DESCRIPTOR& operator () () const{
+				return secDesc_;
+			}
+
+		private:
+			::SECURITY_DESCRIPTOR secDesc_;
+
+		};
+		//セキュリティ記述子
+		class SecurityAttrib{
+		public:
+			SecurityAttrib(const SecurityAttrib&) = default;
+
+			SecurityAttrib(bool doInheritHandle, const SecurityDesc& secDesc) :
+				mySecDesc_(std::make_shared<SecurityDesc>(secDesc)) {
+				secAttr_.nLength = sizeof(::SECURITY_ATTRIBUTES);
+				secAttr_.bInheritHandle = doInheritHandle;
+				secAttr_.lpSecurityDescriptor = mySecDesc_.get();
+			}
+			explicit SecurityAttrib(bool doInheritHandle = false) {
+				secAttr_.nLength = sizeof(::SECURITY_ATTRIBUTES);
+				secAttr_.bInheritHandle = doInheritHandle;
+				secAttr_.lpSecurityDescriptor = nullptr;
+			}
+			
+			//内部の値を取得
+			::SECURITY_ATTRIBUTES& get() {
+				return secAttr_;
+			}
+			const ::SECURITY_ATTRIBUTES& get() const{
+				return secAttr_;
+			}
+			::SECURITY_ATTRIBUTES& operator () () {
+				return secAttr_;
+			}
+			const ::SECURITY_ATTRIBUTES& operator () () const {
+				return secAttr_;
+			}
+
+		private:
+			//本体
+			::SECURITY_ATTRIBUTES secAttr_;
+
+			std::shared_ptr<SecurityDesc> mySecDesc_;
+
+		};
+
+		//CUIでの文字列色
+		enum class ConsoleStrColor : Dword {
+			Blue = FOREGROUND_BLUE,
+			Green = FOREGROUND_GREEN,
+			Red = FOREGROUND_RED,
+			Intensity = FOREGROUND_INTENSITY
+		};
+		using UnifyConsoleStrColor = _impl_UnifyEnum < ConsoleStrColor >;
+
+		//CUIでの背景色
+		enum class ConsoleBgColor : Dword{
+			Blue = BACKGROUND_BLUE,
+			Green = BACKGROUND_GREEN,
+			Red = BACKGROUND_RED,
+			Intensity = BACKGROUND_INTENSITY
+		};
+		using UnifyConsoleBgColor = _impl_UnifyEnum < ConsoleBgColor >;
+
+		//アプリケーション起動時のオプション
+		enum class StartupOption : Dword {
+			Fullscreen = STARTF_RUNFULLSCREEN,
+			ForceChangeCursor = STARTF_FORCEONFEEDBACK,
+			ForceImmutCursor = STARTF_FORCEOFFFEEDBACK,
+			NoPinningTaskbar = STARTF_PREVENTPINNING || STARTF_TITLEISAPPID,
+			RelateTitleWithAppID = STARTF_TITLEISAPPID,
+			RelateTitleWithLnk = STARTF_TITLEISLINKNAME
+		};
+		using UnifyStartupOption = _impl_UnifyEnum < StartupOption >;
+
 		//アクセス指定子
 		enum class AccessDesc : Dword {
 			None = NULL,
@@ -95,13 +192,14 @@ namespace wawl {
 				const UnifyFileCreateProv* createProv,
 				const UnifyFileAttrib* fileAttr,
 				const File* baseFile
-				) :
-				secAttr_(std::make_shared<SecurityAttrib>(*secAttr)) {
+				) {
+				if (secAttr != nullptr)
+					mySecAttr_ = std::make_shared<SecurityAttrib>(*secAttr);
 				file_ = ::CreateFile(
 					(fileName == nullptr ? nullptr : fileName->c_str()),
 					(accessDesc == nullptr ? GENERIC_ALL : accessDesc->get()),
 					(shareMode == nullptr ? NULL : shareMode->get()),
-					(secAttr == nullptr ? nullptr : &(secAttr_.get()->get())),
+					(secAttr == nullptr ? nullptr : &(mySecAttr_->get())),
 					(createProv == nullptr ? CREATE_ALWAYS : createProv->get()),
 					(fileAttr == nullptr ? FILE_ATTRIBUTE_NORMAL : fileAttr->get()),
 					(baseFile == nullptr ? nullptr : baseFile->get())
@@ -189,29 +287,24 @@ namespace wawl {
 				) {}
 			
 			//内部の値を取得
-			GeneralHandle& get() {
+			FileHandle get() const {
 				return file_;
 			}
-			const GeneralHandle& get() const {
+			FileHandle operator () () const {
 				return file_;
 			}
-			GeneralHandle& operator () () {
-				return file_;
-			}
-			const GeneralHandle& operator () () const{
-				return file_;
-			}
-
+			
 		private:
 			//本体
-			GeneralHandle file_ = nullptr;
-			//SecurityAttribの保存用
-			std::shared_ptr<SecurityAttrib> secAttr_ = nullptr;
+			FileHandle file_ = nullptr;
+			//SecurityAttribの保存
+			std::shared_ptr<SecurityAttrib> mySecAttr_ = nullptr;
 
 		};
 
 		//アプリケーション起動のための情報
 		class StartupInfo {
+			friend StartupInfo;
 		public:
 			StartupInfo(
 				const TString* desktopName = nullptr,
@@ -233,12 +326,12 @@ namespace wawl {
 				suInfo_.cb = sizeof(::STARTUPINFO);
 				//デスクトップ名指定
 				if (desktopName != nullptr)
-					myDesktopName_ = std::make_shared<TString>(*desktopName),
-					suInfo_.lpDesktop = const_cast<TChar*>(myDesktopName_->c_str());
+					myDesktopName_ = *desktopName,
+					suInfo_.lpDesktop = const_cast<TChar*>(myDesktopName_.c_str());
 				//Windowのタイトル指定
 				if (wndTitle != nullptr)
-					myTitle_ = std::make_shared<TString>(*wndTitle),
-					suInfo_.lpTitle = const_cast<TChar*>(myTitle_->c_str());
+					myTitle_ = *wndTitle,
+					suInfo_.lpTitle = const_cast<TChar*>(myTitle_.c_str());
 				//Windowの座標設定
 				if (wndPos != nullptr)
 					suInfo_.dwFlags |= STARTF_USEPOSITION,
@@ -269,14 +362,17 @@ namespace wawl {
 					suInfo_.wShowWindow = wndShowModes->get();
 				//標準入力、出力、エラー出力ファイルの設定
 				if (stdInput != nullptr)
+					myInput_ = *stdInput,
 					suInfo_.dwFlags |= STARTF_USESTDHANDLES,
-					suInfo_.hStdInput = stdInput->get();
+					suInfo_.hStdInput = myInput_.get();
 				if (stdOutput != nullptr)
+					myOutput_ = *stdOutput,
 					suInfo_.dwFlags |= STARTF_USESTDHANDLES,
-					suInfo_.hStdOutput = stdOutput->get();
+					suInfo_.hStdOutput = myOutput_.get();
 				if (stdError != nullptr)
+					myError_ = *stdError,
 					suInfo_.dwFlags |= STARTF_USESTDHANDLES,
-					suInfo_.hStdError = stdError->get();
+					suInfo_.hStdError = myError_.get();
 			}
 			StartupInfo(
 				const Position& wndPos
@@ -423,39 +519,49 @@ namespace wawl {
 			//合成
 			StartupInfo& operator |= (const StartupInfo& si) {
 				//デスクトップ名指定
-				if (suInfo_.lpDesktop == nullptr)
-					//ToDo : lpDesktopをshared_ptrで自分で保持
-					myDesktopName_ = std::make_shared<TString>(si.get().lpDesktop),
-					suInfo_.lpDesktop = const_cast<TChar*>(myDesktopName_->c_str());
+				if (suInfo_.lpDesktop == nullptr &&
+					si.get().lpDesktop != nullptr)
+					myDesktopName_ = si.get().lpDesktop,
+					suInfo_.lpDesktop = const_cast<TChar*>(myDesktopName_.c_str());
 				//Windowのタイトル指定
-				if (suInfo_.lpTitle == nullptr)
-					myTitle_ = std::make_shared<TString>(si.get().lpTitle),
-					suInfo_.lpTitle = const_cast<TChar*>(myTitle_->c_str());
+				if (suInfo_.lpTitle == nullptr &&
+					si.get().lpTitle != nullptr)
+					myTitle_ = si.get().lpTitle,
+					suInfo_.lpTitle = const_cast<TChar*>(myTitle_.c_str());
 				//Windowの座標設定
-				if ((suInfo_.dwFlags & STARTF_USEPOSITION) == 0)
+				if ((suInfo_.dwFlags & STARTF_USEPOSITION) == 0 &&
+					(si.get().dwFlags & STARTF_USEPOSITION) != 0)
 					suInfo_.dwFlags |= STARTF_USEPOSITION,
 					suInfo_.dwX = si.get().dwX,
 					suInfo_.dwY = si.get().dwY;
 				//Windowの大きさ設定
-				if ((suInfo_.dwFlags & STARTF_USESIZE) == 0)
+				if ((suInfo_.dwFlags & STARTF_USESIZE) == 0 &&
+					(si.get().dwFlags & STARTF_USESIZE) != 0)
 					suInfo_.dwFlags |= STARTF_USESIZE,
 					suInfo_.dwXSize = si.get().dwXSize,
 					suInfo_.dwYSize = si.get().dwYSize;
 				//Consoleのバッファーの大きさ設定
-				if ((suInfo_.dwFlags & STARTF_USECOUNTCHARS) == 0)
+				if ((suInfo_.dwFlags & STARTF_USECOUNTCHARS) == 0 &&
+					(si.get().dwFlags & STARTF_USECOUNTCHARS) != 0)
 					suInfo_.dwFlags |= STARTF_USECOUNTCHARS,
 					suInfo_.dwXCountChars = si.get().dwXCountChars,
 					suInfo_.dwYCountChars = si.get().dwYCountChars;
 				//Consoleの文字色、背景色設定
-				if ((suInfo_.dwFlags & STARTF_USEFILLATTRIBUTE) == 0)
+				if ((suInfo_.dwFlags & STARTF_USEFILLATTRIBUTE) == 0 &&
+					(si.get().dwFlags & STARTF_USEFILLATTRIBUTE) != 0)
 					suInfo_.dwFlags |= STARTF_USEFILLATTRIBUTE,
 					suInfo_.dwFillAttribute |= si.get().dwFillAttribute;
 				//Window表示形式の設定
-				if ((suInfo_.dwFlags & STARTF_USESHOWWINDOW) == 0)
+				if ((suInfo_.dwFlags & STARTF_USESHOWWINDOW) == 0 &&
+					(si.get().dwFlags & STARTF_USESHOWWINDOW) != 0)
 					suInfo_.dwFlags |= STARTF_USESHOWWINDOW,
 					suInfo_.wShowWindow = si.get().wShowWindow;
 				//標準入力、出力、エラー出力ファイルの設定
-				if ((suInfo_.dwFlags & STARTF_USESTDHANDLES) == 0)
+				if ((suInfo_.dwFlags & STARTF_USESTDHANDLES) == 0 &&
+					(si.get().dwFlags & STARTF_USESTDHANDLES) != 0)
+					myInput_ = si.myInput_,
+					myOutput_ = si.myOutput_,
+					myError_ = si.myError_,
 					suInfo_.dwFlags |= STARTF_USESTDHANDLES,
 					suInfo_.hStdInput = si.get().hStdInput,
 					suInfo_.hStdOutput = si.get().hStdOutput,
@@ -481,11 +587,41 @@ namespace wawl {
 		private:
 			//本体
 			::STARTUPINFO suInfo_;
-			//自分のdesktopNameとtitleを保持
-			std::shared_ptr<TString> myDesktopName_ = nullptr, myTitle_ = nullptr;
+			//自分の一部のメンバを保持
+			TString myDesktopName_ = nullptr, myTitle_ = nullptr;
+			File myInput_{}, myOutput_{}, myError_{};
 		};
 
-		//ToDO : ProcessInfomationラッパー
+		//プロセス情報
+		class ProcessInfo {
+		public:
+			ProcessInfo() {
+				procInfo_.dwProcessId = 0;
+				procInfo_.dwThreadId = 0;
+				procInfo_.hProcess = nullptr;
+				procInfo_.hThread = nullptr;
+			}
+			ProcessInfo(const ProcessInfo&) = default;
+
+			::PROCESS_INFORMATION& get() {
+				return procInfo_;
+			}
+			const ::PROCESS_INFORMATION& get() const {
+				return procInfo_;
+			}
+			::PROCESS_INFORMATION& operator () () {
+				return procInfo_;
+			}
+			const ::PROCESS_INFORMATION& operator () () const {
+				return procInfo_;
+			}
+
+		private:
+			::PROCESS_INFORMATION procInfo_;
+			
+		};
+
+		//ToDo : Processクラス追加
 
 	} //::wawl::fs
 } //::wawl

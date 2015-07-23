@@ -34,9 +34,6 @@ namespace wawl {
 		//符号無し32bit整数
 		using Dword = ::DWORD;
 
-		//ハンドル
-		using GeneralHandle = ::HANDLE;
-
 #endif
 
 	//ライブラリの都合的な型
@@ -131,97 +128,6 @@ namespace wawl {
 
 	//WinAPI構造体のラップ
 #ifdef TRUE
-
-		//セキュリティ指定子
-		class SecurityDesc {
-		public:
-			SecurityDesc() {
-				::InitializeSecurityDescriptor(&secDesc_, SECURITY_DESCRIPTOR_REVISION);
-			}
-			SecurityDesc(const SecurityDesc&) = default;
-
-			//内部の値を取得
-			::SECURITY_DESCRIPTOR& get() {
-				return secDesc_;
-			}
-			const ::SECURITY_DESCRIPTOR& get() const {
-				return secDesc_;
-			}
-			::SECURITY_DESCRIPTOR& operator () () {
-				return secDesc_;
-			}
-			const ::SECURITY_DESCRIPTOR& operator () () const{
-				return secDesc_;
-			}
-
-		private:
-			::SECURITY_DESCRIPTOR secDesc_;
-
-		};
-		//セキュリティ記述子
-		class SecurityAttrib{
-		public:
-			SecurityAttrib(bool doInheritHandle, SecurityDesc& secDesc) {
-				secAttr_.nLength = sizeof(::SECURITY_ATTRIBUTES);
-				secAttr_.bInheritHandle = doInheritHandle;
-				secAttr_.lpSecurityDescriptor = &secDesc;
-			}
-			explicit SecurityAttrib(bool doInheritHandle = false) {
-				secAttr_.nLength = sizeof(::SECURITY_ATTRIBUTES);
-				secAttr_.bInheritHandle = doInheritHandle;
-				secAttr_.lpSecurityDescriptor = nullptr;
-			}
-			SecurityAttrib(const SecurityAttrib& secAttr) = default;
-			SecurityAttrib(SecurityAttrib&& secAttr) :
-				secAttr_(std::move(secAttr.get())) {}
-
-			//内部の値を取得
-			::SECURITY_ATTRIBUTES& get() {
-				return secAttr_;
-			}
-			const ::SECURITY_ATTRIBUTES& get() const{
-				return secAttr_;
-			}
-			::SECURITY_ATTRIBUTES& operator () () {
-				return secAttr_;
-			}
-			const ::SECURITY_ATTRIBUTES& operator () () const {
-				return secAttr_;
-			}
-			
-		private:
-			::SECURITY_ATTRIBUTES secAttr_;
-
-		};
-
-		//CUIでの文字列色
-		enum class ConsoleStrColor : Dword {
-			Blue = FOREGROUND_BLUE,
-			Green = FOREGROUND_GREEN,
-			Red = FOREGROUND_RED,
-			Intensity = FOREGROUND_INTENSITY
-		};
-		using UnifyConsoleStrColor = _impl_UnifyEnum < ConsoleStrColor > ;
-
-		//CUIでの背景色
-		enum class ConsoleBgColor : Dword{
-			Blue = BACKGROUND_BLUE,
-			Green = BACKGROUND_GREEN,
-			Red = BACKGROUND_RED,
-			Intensity = BACKGROUND_INTENSITY
-		};
-		using UnifyConsoleBgColor = _impl_UnifyEnum < ConsoleBgColor > ;
-
-		//アプリケーション起動時のオプション
-		enum class StartupOption : Dword {
-			Fullscreen = STARTF_RUNFULLSCREEN,
-			ForceChangeCursor = STARTF_FORCEONFEEDBACK,
-			ForceImmutCursor = STARTF_FORCEOFFFEEDBACK,
-			NoPinningTaskbar = STARTF_PREVENTPINNING || STARTF_TITLEISAPPID,
-			RelateTitleWithAppID = STARTF_TITLEISAPPID,
-			RelateTitleWithLnk = STARTF_TITLEISLINKNAME
-		};
-		using UnifyStartupOption = _impl_UnifyEnum < StartupOption > ;
 
 		//Window表示形式
 		enum class WndShowMode : Word {
