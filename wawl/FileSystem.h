@@ -10,6 +10,8 @@ namespace wawl {
 
 		//ファイルハンドル
 		using FileHandle = ::HANDLE;
+		//HANDLE内部型
+		using _impl_UnderHandle = std::remove_pointer<::HANDLE>::type;
 
 		//セキュリティ指定子
 		class SecurityDesc {
@@ -195,7 +197,8 @@ namespace wawl {
 				) {
 				if (secAttr != nullptr)
 					mySecAttr_ = std::make_shared<SecurityAttrib>(*secAttr);
-				file_ = ::CreateFile(
+				file_ = std::shared_ptr<_impl_UnderHandle>(
+					::CreateFile(
 					(fileName == nullptr ? nullptr : fileName->c_str()),
 					(accessDesc == nullptr ? GENERIC_ALL : accessDesc->get()),
 					(shareMode == nullptr ? NULL : shareMode->get()),
@@ -203,9 +206,11 @@ namespace wawl {
 					(createProv == nullptr ? CREATE_ALWAYS : createProv->get()),
 					(fileAttr == nullptr ? FILE_ATTRIBUTE_NORMAL : fileAttr->get()),
 					(baseFile == nullptr ? nullptr : baseFile->get())
+					),
+					::CloseHandle
 					);
 
-				if (file_ == INVALID_HANDLE_VALUE)
+				if (file_.get() == INVALID_HANDLE_VALUE)
 					throw std::runtime_error{ "Faild to CreateFile." };
 			}
 			File(
@@ -288,15 +293,15 @@ namespace wawl {
 			
 			//内部の値を取得
 			FileHandle get() const {
-				return file_;
+				return file_.get();
 			}
 			FileHandle operator () () const {
-				return file_;
+				return file_.get();
 			}
 			
 		private:
 			//本体
-			FileHandle file_ = nullptr;
+			std::shared_ptr<_impl_UnderHandle> file_ = nullptr;
 			//SecurityAttribの保存
 			std::shared_ptr<SecurityAttrib> mySecAttr_ = nullptr;
 
