@@ -8,7 +8,7 @@ void WawlMain() {
 	using namespace wawl;
 	using namespace input;
 
-	util::unpackEnum(fs::AccessDesc::All);
+	constexpr auto a = util::unpackEnum(fs::AccessDesc::All);
 
 	while (Sleep(1), true) {
 

@@ -184,7 +184,7 @@ namespace wawl {
 		public:
 			File() = default;
 			File(const File&) = default;
-			File& operator = (const File&) = default;
+			File(File&&) = default;
 
 			File(
 				const TString* fileName,
@@ -311,6 +311,9 @@ namespace wawl {
 		class StartupInfo {
 			friend StartupInfo;
 		public:
+			StartupInfo(const StartupInfo&) = default;
+			StartupInfo(StartupInfo&&) = default;
+
 			StartupInfo(
 				const TString* desktopName = nullptr,
 				const TString* wndTitle = nullptr,
@@ -607,6 +610,7 @@ namespace wawl {
 				procInfo_.hThread = nullptr;
 			}
 			ProcessInfo(const ProcessInfo&) = default;
+			ProcessInfo(ProcessInfo&&) = default;
 
 			::PROCESS_INFORMATION& get() {
 				return procInfo_;
@@ -627,6 +631,12 @@ namespace wawl {
 		};
 
 		//ToDo : ProcessƒNƒ‰ƒX’Ç‰Á
+		class Process {
+		public:
+
+		private:
+
+		};
 
 	} //::wawl::fs
 } //::wawl

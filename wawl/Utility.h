@@ -69,8 +69,7 @@ namespace wawl {
 #ifdef TRUE
 
 		template <typename EnumType>
-		inline auto unpackEnum(const EnumType& val)
-			-> typename std::underlying_type<EnumType>::type {
+		inline constexpr auto unpackEnum(const EnumType& val) {
 			return static_cast<typename std::underlying_type<EnumType>::type>(val);
 		}
 

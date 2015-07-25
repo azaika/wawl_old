@@ -23,21 +23,22 @@ namespace wawl {
 			return ::SetCursorPos(pos.x, pos.y) != 0;
 		}
 
-		//マウス表示カウントを足す
-		inline int addMouseShowCount(int num) {
-			for (int i = 0; i < num - 1; ++i)
-				::ShowCursor(true);
-			return ::ShowCursor(true);
+		//マウスを表示
+		inline void showMouse() {
+			while (::ShowCursor(true) < 0);
 		}
-		//マウス表示カウントを引く
-		inline int subMouseShowCount(int num) {
-			for (int i = 0; i < num - 1; ++i)
-				::ShowCursor(false);
-			return ::ShowCursor(false);
+		//マウスを非表示
+		inline void hideMouse() {
+			while (::ShowCursor(false) >= 0);
 		}
 		//マウス表示カウントを取得
-		inline int getMouseShowCount() {
+		inline int getShowMouseCount() {
 			return (::ShowCursor(false), ::ShowCursor(true));
+		}
+		//マウス表示カウントを足す
+		void addShowMouseCount(int n) {
+			for (int i = 0; i < std::abs(n) - 1; n + 1 * static_cast<int>((n >= 0)))
+				::ShowCursor(n >= 0);
 		}
 
 #endif
