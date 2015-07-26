@@ -37,7 +37,7 @@ namespace wawl {
 		}
 		//マウス表示カウントを足す
 		void addShowMouseCount(int n) {
-			for (int i = 0; i < std::abs(n) - 1; n + 1 * static_cast<int>((n >= 0)))
+			for (int i = 0; i < std::abs(n) - 1; ++i)
 				::ShowCursor(n >= 0);
 		}
 

@@ -184,6 +184,7 @@ namespace wawl {
 		public:
 			File() = default;
 			File(const File&) = default;
+			File& operator = (const File&) = default;
 			File(File&&) = default;
 
 			File(
@@ -302,7 +303,7 @@ namespace wawl {
 		private:
 			//本体
 			std::shared_ptr<_impl_UnderHandle> file_ = nullptr;
-			//SecurityAttribの保存
+			//一部引数の保存
 			std::shared_ptr<SecurityAttrib> mySecAttr_ = nullptr;
 
 		};
@@ -312,6 +313,7 @@ namespace wawl {
 			friend StartupInfo;
 		public:
 			StartupInfo(const StartupInfo&) = default;
+			StartupInfo& operator = (const StartupInfo&) = default;
 			StartupInfo(StartupInfo&&) = default;
 
 			StartupInfo(
@@ -596,21 +598,21 @@ namespace wawl {
 			//本体
 			::STARTUPINFO suInfo_;
 			//自分の一部のメンバを保持
-			TString myDesktopName_ = nullptr, myTitle_ = nullptr;
+			TString myDesktopName_, myTitle_;
 			File myInput_{}, myOutput_{}, myError_{};
 		};
 
 		//プロセス情報
-		class ProcessInfo {
+		class ProcInfo {
 		public:
-			ProcessInfo() {
+			ProcInfo() {
 				procInfo_.dwProcessId = 0;
 				procInfo_.dwThreadId = 0;
 				procInfo_.hProcess = nullptr;
 				procInfo_.hThread = nullptr;
 			}
-			ProcessInfo(const ProcessInfo&) = default;
-			ProcessInfo(ProcessInfo&&) = default;
+			ProcInfo(const ProcInfo&) = default;
+			ProcInfo(ProcInfo&&) = default;
 
 			::PROCESS_INFORMATION& get() {
 				return procInfo_;
@@ -630,12 +632,81 @@ namespace wawl {
 			
 		};
 
+		//プロセス生成規定
+		enum class ProcCreateProv {
+			NotInheritJob = CREATE_BREAKAWAY_FROM_JOB,
+			NotInheritErrorMode = CREATE_DEFAULT_ERROR_MODE,
+			DosMode = CREATE_FORCEDOS,
+			CreateNewConsole = CREATE_NEW_CONSOLE,
+			CreateNewProcGroup = CREATE_NEW_PROCESS_GROUP,
+			NotCreateWindow = CREATE_NO_WINDOW,
+			VdmMode = CREATE_SEPARATE_WOW_VDM,
+			SharedVdmMode = CREATE_SHARED_WOW_VDM,
+			SuspendPrimary = CREATE_SUSPENDED,
+			DebugMode = DEBUG_PROCESS,
+			NotInheritDebugMode = DEBUG_ONLY_THIS_PROCESS,
+			DisallowAccessConsole = DETACHED_PROCESS,
+
+			PriorityLv1 = IDLE_PRIORITY_CLASS,
+			PriorityLv2 = BELOW_NORMAL_PRIORITY_CLASS,
+			PriorityLv3 = NORMAL_PRIORITY_CLASS,
+			PriorityLv4 = ABOVE_NORMAL_PRIORITY_CLASS,
+			PriorityLv5 = HIGH_PRIORITY_CLASS,
+			MaxPriority = REALTIME_PRIORITY_CLASS
+		};
+		using UnifyProcCreateProv = _impl_UnifyEnum<ProcCreateProv>;
+
 		//ToDo : Processクラス追加
 		class Process {
 		public:
+			Process() = default;
+			Process(const Process&) = default;
+			Process& operator = (const Process&) = default;
+			Process(Process&&) = default;
+			Process& operator = (Process&&) = default;
+
+			Process(
+				const TString* appName,
+				const TString* cmdLineArgs,
+				const SecurityAttrib* procAttrib,
+				const SecurityAttrib* threadAttrib,
+				bool* doInheritHandle,
+				const UnifyProcCreateProv* createProv,
+				const TString* envVars,
+				const TString* currentDir,
+				const StartupInfo* startupInfo
+				) {
+				if (procAttrib != nullptr)
+					myProcAttrib_ = std::make_shared<SecurityAttrib>(*procAttrib);
+				if (threadAttrib != nullptr)
+					myThreadAttrib_ = std::make_shared<SecurityAttrib>(*threadAttrib);
+				if (startupInfo != nullptr)
+					myStartupInfo_ = std::make_shared<StartupInfo>(*startupInfo);
+
+				if (
+					::CreateProcess(
+						(appName == nullptr ? nullptr : appName->c_str()),
+						(cmdLineArgs == nullptr ? nullptr : const_cast<TChar*>(cmdLineArgs->c_str())),
+						(procAttrib == nullptr ? nullptr : &myProcAttrib_->get()),
+						(threadAttrib == nullptr ? nullptr : &myThreadAttrib_->get()),
+						(doInheritHandle == nullptr ? false : *doInheritHandle),
+						(createProv == nullptr ? NORMAL_PRIORITY_CLASS : createProv->get()),
+						(envVars == nullptr ? nullptr : reinterpret_cast<void*>(const_cast<TChar*>(envVars->c_str()))),
+						(currentDir == nullptr ? nullptr : currentDir->c_str()),
+						(startupInfo == nullptr ? nullptr : &myStartupInfo_->get()),
+						&procInfo_.get()
+						) == 0
+					)
+					throw std::runtime_error("Failed to CreateProcess.");
+			}
 
 		private:
-
+			//プロセス状況
+			ProcInfo procInfo_;
+			//一部引数の保存
+			std::shared_ptr<SecurityAttrib> myProcAttrib_ = nullptr, myThreadAttrib_ = nullptr;
+			std::shared_ptr<StartupInfo> myStartupInfo_ = nullptr;
+			
 		};
 
 	} //::wawl::fs
