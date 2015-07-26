@@ -6,7 +6,8 @@
 *.idb
 *.opensdf
 *.suo
-*.vcxproj*
+*.vcxproj
+*.filters
 Debug
 Release
 x64
