@@ -6,6 +6,7 @@
 *.idb
 *.opensdf
 *.suo
+*.vcxproj*
 Debug
 Release
 x64
