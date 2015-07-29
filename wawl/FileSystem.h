@@ -208,8 +208,8 @@ namespace wawl {
 					(fileAttr == nullptr ? FILE_ATTRIBUTE_NORMAL : fileAttr->get()),
 					(baseFile == nullptr ? nullptr : baseFile->get())
 					),
-					::CloseHandle
-					);
+					[](::HANDLE h) { ::CloseHandle(h), delete h; }
+				);
 
 				if (file_.get() == INVALID_HANDLE_VALUE)
 					throw std::runtime_error{ "Faild to CreateFile." };
@@ -606,29 +606,37 @@ namespace wawl {
 		class ProcInfo {
 		public:
 			ProcInfo() {
-				procInfo_.dwProcessId = 0;
-				procInfo_.dwThreadId = 0;
-				procInfo_.hProcess = nullptr;
-				procInfo_.hThread = nullptr;
+				procInfo_->dwProcessId = 0;
+				procInfo_->dwThreadId = 0;
+				procInfo_->hProcess = nullptr;
+				procInfo_->hThread = nullptr;
 			}
 			ProcInfo(const ProcInfo&) = default;
 			ProcInfo(ProcInfo&&) = default;
 
 			::PROCESS_INFORMATION& get() {
-				return procInfo_;
+				return *procInfo_;
 			}
 			const ::PROCESS_INFORMATION& get() const {
-				return procInfo_;
+				return *procInfo_;
 			}
 			::PROCESS_INFORMATION& operator () () {
-				return procInfo_;
+				return *procInfo_;
 			}
 			const ::PROCESS_INFORMATION& operator () () const {
-				return procInfo_;
+				return *procInfo_;
+			}
+
+			//shared_ptr用カスタムデリータ
+			static void _impl_Deleter(::PROCESS_INFORMATION* pi) {
+				if (pi != nullptr)
+					::CloseHandle(pi->hProcess),
+					::CloseHandle(pi->hThread),
+					delete pi;
 			}
 
 		private:
-			::PROCESS_INFORMATION procInfo_;
+			std::shared_ptr<::PROCESS_INFORMATION> procInfo_ = std::shared_ptr<::PROCESS_INFORMATION>{ nullptr, ProcInfo::_impl_Deleter };
 			
 		};
 
@@ -656,7 +664,6 @@ namespace wawl {
 		};
 		using UnifyProcCreateProv = _impl_UnifyEnum<ProcCreateProv>;
 
-		//ToDo : Processクラス追加
 		class Process {
 		public:
 			Process() = default;
@@ -670,7 +677,7 @@ namespace wawl {
 				const TString* cmdLineArgs,
 				const SecurityAttrib* procAttrib,
 				const SecurityAttrib* threadAttrib,
-				bool* doInheritHandle,
+				bool doInheritHandle,
 				const UnifyProcCreateProv* createProv,
 				const TString* envVars,
 				const TString* currentDir,
@@ -689,7 +696,7 @@ namespace wawl {
 						(cmdLineArgs == nullptr ? nullptr : const_cast<TChar*>(cmdLineArgs->c_str())),
 						(procAttrib == nullptr ? nullptr : &myProcAttrib_->get()),
 						(threadAttrib == nullptr ? nullptr : &myThreadAttrib_->get()),
-						(doInheritHandle == nullptr ? false : *doInheritHandle),
+						doInheritHandle,
 						(createProv == nullptr ? NORMAL_PRIORITY_CLASS : createProv->get()),
 						(envVars == nullptr ? nullptr : reinterpret_cast<void*>(const_cast<TChar*>(envVars->c_str()))),
 						(currentDir == nullptr ? nullptr : currentDir->c_str()),
@@ -699,6 +706,61 @@ namespace wawl {
 					)
 					throw std::runtime_error("Failed to CreateProcess.");
 			}
+			Process(
+				const TString& cmdLine,
+				const StartupInfo& startupInfo
+				) :
+				Process(
+					nullptr,
+					&cmdLine,
+					nullptr,
+					nullptr,
+					false,
+					nullptr,
+					nullptr,
+					nullptr,
+					&startupInfo
+					) {}
+			Process(
+				const TString& appName,
+				const TString& cmdLineArgs,
+				const UnifyProcCreateProv& createProv,
+				const TString& currentDir,
+				const StartupInfo& startupInfo
+				) :
+				Process(
+					&appName,
+					&cmdLineArgs,
+					nullptr,
+					nullptr,
+					false,
+					&createProv,
+					nullptr,
+					&currentDir,
+					&startupInfo
+					) {}
+			Process(
+				const TString& appName,
+				const TString& cmdLineArgs,
+				const SecurityAttrib& procAttrib,
+				const SecurityAttrib& threadAttrib,
+				bool doInheritHandle,
+				const UnifyProcCreateProv& createProv,
+				const TString& envVars,
+				const TString& currentDir,
+				const StartupInfo& startupInfo
+				) :
+				Process(
+					&appName,
+					&cmdLineArgs,
+					&procAttrib,
+					&threadAttrib,
+					doInheritHandle,
+					&createProv,
+					&envVars,
+					&currentDir,
+					&startupInfo
+					) {}
 
 		private:
 			//プロセス状況
