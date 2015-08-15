@@ -20,6 +20,9 @@ namespace wawl {
 				::InitializeSecurityDescriptor(&secDesc_, SECURITY_DESCRIPTOR_REVISION);
 			}
 			SecurityDesc(const SecurityDesc&) = default;
+			SecurityDesc(SecurityDesc&&) = default;
+			SecurityDesc& operator = (const SecurityDesc&) = default;
+			SecurityDesc& operator = (SecurityDesc&&) = default;
 
 			//内部の値を取得
 			::SECURITY_DESCRIPTOR& get() {
@@ -43,6 +46,9 @@ namespace wawl {
 		class SecurityAttrib{
 		public:
 			SecurityAttrib(const SecurityAttrib&) = default;
+			SecurityAttrib(SecurityAttrib&&) = default;
+			SecurityAttrib& operator = (const SecurityAttrib&) = default;
+			SecurityAttrib& operator = (SecurityAttrib&&) = default;
 
 			SecurityAttrib(bool doInheritHandle, const SecurityDesc& secDesc) :
 				mySecDesc_(std::make_shared<SecurityDesc>(secDesc)) {
@@ -78,22 +84,18 @@ namespace wawl {
 
 		};
 
-		//CUIでの文字列色
-		enum class ConsoleStrColor : Dword {
-			Blue = FOREGROUND_BLUE,
-			Green = FOREGROUND_GREEN,
-			Red = FOREGROUND_RED,
-			Intensity = FOREGROUND_INTENSITY
-		};
-		using UnifyConsoleStrColor = _impl_UnifyEnum < ConsoleStrColor >;
-
-		//CUIでの背景色
-		enum class ConsoleBgColor : Dword{
+		//コンソールの色
+		enum class ConsoleColor : Dword {
 			Blue = BACKGROUND_BLUE,
 			Green = BACKGROUND_GREEN,
 			Red = BACKGROUND_RED,
 			Intensity = BACKGROUND_INTENSITY
 		};
+		//CUIでの文字列色
+		using ConsoleStrColor = ConsoleColor;
+		using UnifyConsoleStrColor = _impl_UnifyEnum < ConsoleStrColor >;
+		//CUIでの背景色
+		using ConsoleBgColor = ConsoleColor;
 		using UnifyConsoleBgColor = _impl_UnifyEnum < ConsoleBgColor >;
 
 		//アプリケーション起動時のオプション
@@ -184,8 +186,9 @@ namespace wawl {
 		public:
 			File() = default;
 			File(const File&) = default;
-			File& operator = (const File&) = default;
 			File(File&&) = default;
+			File& operator = (const File&) = default;
+			File& operator = (File&&) = default;
 
 			File(
 				const TString* fileName,
@@ -313,8 +316,9 @@ namespace wawl {
 			friend StartupInfo;
 		public:
 			StartupInfo(const StartupInfo&) = default;
-			StartupInfo& operator = (const StartupInfo&) = default;
 			StartupInfo(StartupInfo&&) = default;
+			StartupInfo& operator = (const StartupInfo&) = default;
+			StartupInfo& operator = (StartupInfo&&) = default;
 
 			StartupInfo(
 				const TString* desktopName = nullptr,
@@ -581,16 +585,16 @@ namespace wawl {
 			}
 			
 			//内部の値を取得
-			::STARTUPINFO& get() {
+			auto& get() {
 				return suInfo_;
 			}
 			const ::STARTUPINFO& get() const {
 				return suInfo_;
 			}
-			::STARTUPINFO& operator () () {
+			auto& operator () () {
 				return suInfo_;
 			}
-			const ::STARTUPINFO& operator () () const {
+			const auto& operator () () const {
 				return suInfo_;
 			}
 
@@ -613,35 +617,36 @@ namespace wawl {
 			}
 			ProcInfo(const ProcInfo&) = default;
 			ProcInfo(ProcInfo&&) = default;
+			ProcInfo& operator = (const ProcInfo&) = default;
+			ProcInfo& operator = (ProcInfo&&) = default;
 
-			::PROCESS_INFORMATION& get() {
+			auto& get() {
 				return *procInfo_;
 			}
-			const ::PROCESS_INFORMATION& get() const {
+			const auto& get() const {
 				return *procInfo_;
 			}
-			::PROCESS_INFORMATION& operator () () {
+			auto& operator () () {
 				return *procInfo_;
 			}
-			const ::PROCESS_INFORMATION& operator () () const {
+			const auto& operator () () const {
 				return *procInfo_;
 			}
-
-			//shared_ptr用カスタムデリータ
-			static void _impl_Deleter(::PROCESS_INFORMATION* pi) {
-				if (pi != nullptr)
-					::CloseHandle(pi->hProcess),
-					::CloseHandle(pi->hThread),
-					delete pi;
+			//shared_ptrを返す
+			auto& getPtr() {
+				return procInfo_;
 			}
-
+			const auto& getPtr() const{
+				return procInfo_;
+			}
+			
 		private:
-			std::shared_ptr<::PROCESS_INFORMATION> procInfo_ = std::shared_ptr<::PROCESS_INFORMATION>{ nullptr, ProcInfo::_impl_Deleter };
+			std::shared_ptr<::PROCESS_INFORMATION> procInfo_ = std::make_shared<::PROCESS_INFORMATION>();
 			
 		};
 
 		//プロセス生成規定
-		enum class ProcCreateProv {
+		enum class ProcCreateProv : Dword {
 			NotInheritJob = CREATE_BREAKAWAY_FROM_JOB,
 			NotInheritErrorMode = CREATE_DEFAULT_ERROR_MODE,
 			DosMode = CREATE_FORCEDOS,
@@ -690,6 +695,8 @@ namespace wawl {
 				if (startupInfo != nullptr)
 					myStartupInfo_ = std::make_shared<StartupInfo>(*startupInfo);
 
+				::PROCESS_INFORMATION* tmpProcInfo = new ::PROCESS_INFORMATION();
+
 				if (
 					::CreateProcess(
 						(appName == nullptr ? nullptr : appName->c_str()),
@@ -701,10 +708,20 @@ namespace wawl {
 						(envVars == nullptr ? nullptr : reinterpret_cast<void*>(const_cast<TChar*>(envVars->c_str()))),
 						(currentDir == nullptr ? nullptr : currentDir->c_str()),
 						(startupInfo == nullptr ? nullptr : &myStartupInfo_->get()),
-						&procInfo_.get()
+						tmpProcInfo
 						) == 0
 					)
+					delete tmpProcInfo,
 					throw std::runtime_error("Failed to CreateProcess.");
+
+				procInfo_.getPtr() = std::shared_ptr<::PROCESS_INFORMATION>{
+					tmpProcInfo,
+					[](::PROCESS_INFORMATION* pi) {
+					if (pi != nullptr)
+						::CloseHandle(pi->hProcess),
+						::CloseHandle(pi->hThread),
+						delete pi;
+				} };
 			}
 			Process(
 				const TString& cmdLine,
@@ -717,6 +734,22 @@ namespace wawl {
 					nullptr,
 					false,
 					nullptr,
+					nullptr,
+					nullptr,
+					&startupInfo
+					) {}
+			Process(
+				const TString& cmdLine,
+				const UnifyProcCreateProv& createProv,
+				const StartupInfo& startupInfo
+				) :
+				Process(
+					nullptr,
+					&cmdLine,
+					nullptr,
+					nullptr,
+					false,
+					&createProv,
 					nullptr,
 					nullptr,
 					&startupInfo

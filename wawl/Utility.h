@@ -22,11 +22,6 @@ namespace wawl {
 				throw std::runtime_error{ "Falied to mbstowcs_s" };
 
 			return wstrBuf;
-
-			//std::vector<WChar> wch(size);
-			//if (mbstowcs_s(&size, wch.data(), wch.size(), str.c_str(), str.size()) != 0)
-			//	return WString{};
-			//return WString{wch.begin(), wch.end()};
 		}
 		//WString‚ðAString‚É•ÏŠ·‚µ‚Ü‚·
 		AString toAString(const WString& wstr) {
@@ -59,7 +54,7 @@ namespace wawl {
 			return TString{ str };
 		}
 		inline TString toTString(const WString& str) {
-			return toWString(str);
+			return toAString(str);
 		}
 
 #endif //UNICODE

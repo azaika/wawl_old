@@ -10,7 +10,7 @@
 #include "BaseType.h"
 
 //ユーザー定義Main
-void WawlMain();
+void wawlMain(const wawl::TString&);
 
 namespace wawl {
 	namespace sys {
@@ -19,7 +19,7 @@ namespace wawl {
 
 		//このアプリのAppHandleを取得
 		inline AppHandle getAppHandle() {
-			return static_cast<HINSTANCE>(::GetModuleHandle(0));
+			return static_cast<::HINSTANCE>(::GetModuleHandle(0));
 		}
 
 		//完全なコマンドライン引数を取得
@@ -127,7 +127,7 @@ int WINAPI _tWinMain(
 
 	sys::_impl_System::setWinMainArgs(cmdLine, cmdShow);
 
-	WawlMain();
+	wawlMain(cmdLine);
 
 	return 0;
 }

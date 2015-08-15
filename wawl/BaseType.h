@@ -79,7 +79,9 @@ namespace wawl {
 
 			_impl_UnifyEnum() = default;
 			_impl_UnifyEnum(const _impl_UnifyEnum<EnumType>&) = default;
+			_impl_UnifyEnum(_impl_UnifyEnum<EnumType>&&) = default;
 			_impl_UnifyEnum<EnumType>& operator = (const _impl_UnifyEnum<EnumType>&) = default;
+			_impl_UnifyEnum<EnumType>& operator = (_impl_UnifyEnum<EnumType>&&) = default;
 
 			_impl_UnifyEnum(const EnumType& val) :
 				vals_(static_cast<ValueType>(val)) {}
