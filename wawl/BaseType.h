@@ -34,14 +34,20 @@ namespace wawl {
 		//符号無し32bit整数
 		using Dword = ::DWORD;
 
+		//ポインタを格納する整数型
+		using IntPtr = ::INT_PTR;
+		using UintPtr = ::UINT_PTR;
+
 #endif
 
 	//ライブラリの都合的な型
 #ifdef TRUE
 
 		//基本的な汎用座標型
-		template <typename ValueType>
+		template <typename VTy>
 		struct Coordinates {
+
+			using ValueType = VTy;
 
 			ValueType x = 0, y = 0;
 
@@ -54,10 +60,8 @@ namespace wawl {
 				x(static_cast<ValueType>(p_.x)),
 				y(static_cast<ValueType>(p_.y)) {}
 
-			template <typename T>
-			Coordinates(const T& x_, const T& y_) :
-				x(static_cast<ValueType>(x_)),
-				y(static_cast<ValueType>(y_)) {}
+			Coordinates(const ValueType& x_, const ValueType& y_) :
+				x(x_), y(y_) {}
 
 			template <typename T>
 			void operator = (const Coordinates<T>& p_) {

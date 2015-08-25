@@ -4,7 +4,7 @@
 #include "FileSystem.h"
 #include "Window.h"
 
-void wawlMain(const wawl::TString&) {
+void wawlMain(const wawl::TString& args) {
 	using namespace wawl;
 	using namespace input;
 

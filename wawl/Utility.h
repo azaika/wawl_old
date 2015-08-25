@@ -8,7 +8,7 @@ namespace wawl {
 		//String関連
 #ifdef TRUE
 
-		//AStringをWStringに変換します
+		//AStringをWStringに変換
 		WString toWString(const AString& str) {
 			//変換後のサイズ
 			size_t wstrLen;
@@ -23,7 +23,7 @@ namespace wawl {
 
 			return wstrBuf;
 		}
-		//WStringをAStringに変換します
+		//WStringをAStringに変換
 		AString toAString(const WString& wstr) {
 			//変換後のサイズ
 			size_t astrLen;
@@ -47,6 +47,10 @@ namespace wawl {
 		inline TString toTString(const AString& str) {
 			return toWString(str);
 		}
+		template<typename T>
+		inline TString valToTStr(const T& val) {
+			return std::to_wstring(val);
+		}
 
 #else //UNICODE
 
@@ -55,6 +59,10 @@ namespace wawl {
 		}
 		inline TString toTString(const WString& str) {
 			return toAString(str);
+		}
+		template<typename T>
+		inline TString valToStr(const T& val) {
+			return std::to_string(val);
 		}
 
 #endif //UNICODE
