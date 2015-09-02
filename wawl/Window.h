@@ -52,6 +52,140 @@ namespace wawl {
 
 		//ToDo : MENUのラッパ作る
 
+		//ちょっと書いてみた by yuki74w
+		//MENUはCreateMenuでHMENU型の変数を作り、
+		//InsertMenuItemでMENUをどんどん挿入していく。
+
+		enum class MenuSetting {
+			Bitmap=MIIM_BITMAP,
+			CheckMarks=MIIM_CHECKMARKS,
+			Data=MIIM_DATA,
+			FType=MIIM_FTYPE,
+			ID=MIIM_ID,
+			State=MIIM_STATE,
+			String=MIIM_STRING,
+			SubMenu=MIIM_SUBMENU,
+			Type=MIIM_TYPE,
+		};
+		using UnifyMenuSetting = _impl_UnifyEnum<MenuSetting>;
+
+		enum class MenuType {
+			Bitmap=MFT_BITMAP,
+			MenuBarBreak=MFT_MENUBARBREAK,
+			MenuBreak=MFT_MENUBREAK,
+			OwnerDraw=MFT_OWNERDRAW,
+			RadioCheck=MFT_RADIOCHECK,
+			RightJustify=MFT_RIGHTJUSTIFY,
+			RightOrder=MFT_RIGHTORDER,
+			Separator=MFT_SEPARATOR,
+			String=MFT_STRING,
+		};
+		using UnifyMenuType = _impl_UnifyEnum<MenuType>;
+
+		enum class MenuState {
+			Checked = MFS_CHECKED,
+			Default = MFS_DEFAULT,
+			DisAbled = MFS_DISABLED,
+			Enabled = MFS_ENABLED,
+			Grayed = MFS_GRAYED,
+			HighLight = MFS_HILITE,
+			UnChecked=MFS_UNCHECKED,
+			UnHighLight=MFS_UNHILITE,
+		};
+		using UnifyMenuState = _impl_UnifyEnum<MenuState>;
+
+		class SubMenu {
+		public:
+			SubMenu() {
+				Entity = CreatePopupMenu();
+			}
+
+			auto& get() {
+				return Entity;
+			}
+			const auto& get() const {
+				return Entity;
+			}
+			auto& operator()() {
+				return Entity;
+			}
+			const auto& operator()() const {
+				return Entity;
+			}
+
+		private:
+			::HMENU Entity;
+		};
+
+		class MenuItemInformation {
+		public:
+			///とりあえずよく使いそうなものしか記述してない
+
+			///<summary>文字が表示されるだけのメニューアイテム</summary>
+			MenuItemInformation(std::string Text) {
+				Entity.cbSize = sizeof(MENUITEMINFO);
+				Entity.fMask = static_cast<UINT>(MenuSetting::Type);
+				Entity.fType = static_cast<UINT>(MenuType::String);
+			}
+
+			///<summary>サブメニュー持ち</summary>
+			MenuItemInformation(std::string Text,SubMenu ItemSubMenu) {
+				Entity.cbSize = sizeof(MENUITEMINFO);
+				Entity.fMask = UnifyMenuSetting({ static_cast<UINT>(MenuSetting::SubMenu),static_cast<UINT>(MenuSetting::Type) }).get();
+				Entity.fType = static_cast<UINT>(MenuType::String);
+				Entity.hSubMenu = ItemSubMenu.get();
+			}
+
+			///<summary>区切り線</summary>
+			MenuItemInformation() {
+				Entity.cbSize = sizeof(MENUITEMINFO);
+				Entity.fMask = static_cast<UINT>(MenuSetting::Type);
+				Entity.fType = static_cast<UINT>(MenuType::Separator);
+			}
+
+
+
+
+			auto& get() {
+				return Entity;
+			}
+			const auto& get() const{
+				return Entity;
+			}
+			auto& operator()() {
+				return Entity;
+			}
+			const auto& operator()() const{
+				return Entity;
+			}
+
+		private:
+			MENUITEMINFO Entity;
+		};
+
+		class Menu {
+		public:
+			Menu() {
+				hmenu_ = CreateMenu();
+			}
+
+			void Insert(MenuItemInformation ItemInfo,unsigned int position) {
+				InsertMenuItem(hmenu_, position, TRUE, &ItemInfo());
+			}
+
+
+		private:
+			//自身への参照を保持
+			static std::unordered_map<::HMENU, Menu*> menuRefs_;
+			::HMENU hmenu_;
+
+		};
+
+
+		//ここまで
+		
+
+
 		class Prop {
 		public:
 			Prop() {

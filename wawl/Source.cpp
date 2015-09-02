@@ -23,7 +23,7 @@ void wawlMain(const wawl::TString& args) {
 			setMousePos({ 100, 100 });
 		else if (getKeyState(Key::Two)) {
 			try {
-				fs::Process{ L"2014_Test_1.exe", fs::StartupInfo{} };
+				fs::Process{ L"notepad.exe", fs::StartupInfo{} };
 			}
 			catch (std::runtime_error& re) {
 				wnd::showMessage(L"Error", util::toTString(re.what()).c_str(), wnd::ChoiceButton::OK);
