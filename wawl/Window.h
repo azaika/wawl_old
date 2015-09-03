@@ -8,21 +8,11 @@
 namespace wawl {
 	namespace wnd {
 
-		enum class PropOption : unsigned int {
-			AlignClientByByte = CS_BYTEALIGNCLIENT,
-			AlignWndByByte = CS_BYTEALIGNWINDOW,
-			RedrawWidth = CS_HREDRAW,
-			RedrawHeight = CS_VREDRAW,
-			CallOnDoubleClick = CS_DBLCLKS,
-			NoClose = CS_NOCLOSE,
-			ShareDC = CS_CLASSDC,
-			OriginalDC = CS_OWNDC,
-			ParentDC = CS_PARENTDC,
-			Global = CS_GLOBALCLASS,
-			SaveBitmap = CS_SAVEBITS,
-			DropShadow = CS_DROPSHADOW
-		};
-		using UnifyPropOption = _impl_UnifyEnum<PropOption>;
+		//test code
+		void ReadImageByInstance(const TString& instName) {
+			static_cast<::HBITMAP>(::LoadImage(sys::getAppHandle(), instName.c_str(), IMAGE_BITMAP, 0, 0, LR_DEFAULTCOLOR | LR_DEFAULTSIZE));
+		}
+		//~test code
 
 		enum class DefaultIcon : UintPtr {
 			App = reinterpret_cast<UintPtr>(IDI_APPLICATION),
@@ -47,10 +37,116 @@ namespace wawl {
 			Hollow = HOLLOW_BRUSH
 		};
 
-		//Windowプロシージャの宣言
-		::LRESULT CALLBACK _impl_MsgProc(::HWND hwnd, unsigned int uMsg, ::WPARAM wParam, ::LPARAM lParam);
+		enum class MenuOption : unsigned int {
+			UseBitmap = MFT_BITMAP,
+			LineBreak = MFT_MENUBARBREAK,
+			Break = MFT_MENUBREAK,
+			OwnerDraw = MFT_OWNERDRAW,
+			RadioButton = MFT_RADIOCHECK,
+			RightJustify = MFT_RIGHTJUSTIFY,
+			RightOrder = MFT_RIGHTORDER,
+			SectionLine = MFT_SEPARATOR
+		};
+		using UnifyMenuOption = _impl_UnifyEnum<MenuOption>;
+
+		enum class MenuType : unsigned int {
+			Check = MFS_CHECKED,
+			Uncheck = MFS_UNCHECKED,
+			Default = MFS_DEFAULT,
+			Disable = MFS_DISABLED,
+			Enable = MFS_ENABLED,
+			Hilite = MFS_HILITE,
+			Unhilite = MFS_UNHILITE
+		};
+		using UnifyMenuType = _impl_UnifyEnum<MenuType>;
+
+		class MenuInfo {
+		public:
+			MenuInfo(
+				const UnifyMenuOption* option,
+				const UnifyMenuType* type
+				) {
+				::ZeroMemory(&info_, sizeof(info_));
+				info_.cbSize = sizeof(::MENUITEMINFO);
+				info_.fMask |= MIIM_ID;
+				info_.wID = id_;
+
+				if (option != nullptr)
+					info_.fMask |= MIIM_FTYPE,
+					info_.fType = option->get();
+				if (type != nullptr)
+					info_.fMask |= MIIM_STATE,
+					info_.fState = type->get();
+				//nullptrでなければmask追加して設定
+
+				++idCap_;
+			}
+
+			::MENUITEMINFO& get() {
+				return info_;
+			}
+			const ::MENUITEMINFO& get() const {
+				return info_;
+			}
+			::MENUITEMINFO& operator() () {
+				return info_;
+			}
+			const ::MENUITEMINFO& operator() () const {
+				return info_;
+			}
+
+			int getId() const {
+				return id_;
+			}
+
+		private:
+			static int idCap_;
+			::MENUITEMINFO info_;
+			int id_ = idCap_;
+
+		};
+		int MenuInfo::idCap_ = 0;
 
 		//ToDo : MENUのラッパ作る
+		class Menu {
+		public:
+			Menu(const Menu&) = default;
+			Menu(Menu&&) = default;
+			Menu& operator = (const Menu&) = default;
+			Menu& operator = (Menu&&) = default;
+
+			Menu() :
+				menu_(::CreateMenu()) {
+				if (menu_ == nullptr)
+					throw std::runtime_error("Failed to CreateMenu");
+			}
+
+			Menu& add(const Menu& child) {
+			}
+
+		private:
+			::HMENU menu_ = nullptr;
+			
+		};
+		
+		enum class PropOption : unsigned int {
+			AlignClientByByte = CS_BYTEALIGNCLIENT,
+			AlignWndByByte = CS_BYTEALIGNWINDOW,
+			RedrawWidth = CS_HREDRAW,
+			RedrawHeight = CS_VREDRAW,
+			CallOnDoubleClick = CS_DBLCLKS,
+			NoClose = CS_NOCLOSE,
+			ShareDC = CS_CLASSDC,
+			OriginalDC = CS_OWNDC,
+			ParentDC = CS_PARENTDC,
+			Global = CS_GLOBALCLASS,
+			SaveBitmap = CS_SAVEBITS,
+			DropShadow = CS_DROPSHADOW
+		};
+		using UnifyPropOption = _impl_UnifyEnum<PropOption>;
+
+		//Windowプロシージャの宣言
+		::LRESULT CALLBACK _impl_MsgProc(::HWND hwnd, unsigned int uMsg, ::WPARAM wParam, ::LPARAM lParam);
 
 		class Prop {
 		public:
@@ -70,6 +166,7 @@ namespace wawl {
 				if (id_ = ::RegisterClassEx(&wndClass_), id_ == false)
 					throw std::runtime_error{"Failed to RegisterClassEx"};
 			}
+			//ToDo : コンストラクタの種類追加
 
 			auto& get() {
 				return wndClass_;
@@ -179,6 +276,8 @@ namespace wawl {
 					)
 				);
 		}
+
+		//ToDo : showMessageのオーバーロード追加
 
 	}
 }
