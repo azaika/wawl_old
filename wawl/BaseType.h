@@ -87,9 +87,9 @@ namespace wawl {
 			_impl_UnifyEnum<EnumType>& operator = (const _impl_UnifyEnum<EnumType>&) = default;
 			_impl_UnifyEnum<EnumType>& operator = (_impl_UnifyEnum<EnumType>&&) = default;
 
-			_impl_UnifyEnum(const EnumType& val) :
+			constexpr _impl_UnifyEnum(const EnumType& val) :
 				vals_(static_cast<ValueType>(val)) {}
-			_impl_UnifyEnum(const std::initializer_list<ValueType>& valList) {
+			constexpr _impl_UnifyEnum(const std::initializer_list<ValueType>& valList) {
 				for (auto&& val : valList)
 					vals_ |= val;
 			}
@@ -98,13 +98,13 @@ namespace wawl {
 			ValueType& get() {
 				return vals_;
 			}
-			const ValueType& get() const {
+			constexpr const ValueType& get() const {
 				return vals_;
 			}
 			ValueType& operator () () {
 				return vals_;
 			}
-			const ValueType& operator () () const{
+			constexpr const ValueType& operator () () const{
 				return vals_;
 			}
 
@@ -121,8 +121,18 @@ namespace wawl {
 			}
 
 			//含まれているかどうか
-			bool isIncluded(const ValueType& val) {
-				return (vals_ & val) == val;
+			constexpr bool isIncluded(const ValueType& val) const {
+				return (vals_ & val) != 0;
+			}
+			constexpr bool isIncluded(const EnumType& val) const {
+				return (vals_ & static_cast<ValueType>(val)) != 0;
+			}
+			bool isIncluded(const std::initializer_list<EnumType> vals) const {
+				return std::find_if(
+					vals.begin(),
+					vals.end(),
+					[&vals_](EnumType& val) { return (vals_ & val) != 0 }
+				) == vals.end();
 			}
 
 		private:
@@ -134,6 +144,51 @@ namespace wawl {
 
 	//WinAPI構造体のラップ
 #ifdef TRUE
+
+		//test code
+		enum class WndShowmode_ : Dword {
+			Hide = 1,
+			Show = 2,
+			Restore = 4,
+
+			Active = 8,
+			Inactive = 16,
+
+			Max = 32,
+			Min = 64,
+			Normal = 128,
+
+			Default = 256,
+			ForceMin = 512
+		};
+		using UnifyWndShowmode_ = _impl_UnifyEnum < WndShowmode_ >;
+		Word _impl_toSWConstant(const UnifyWndShowmode_& sw) {
+			if (sw.isIncluded(WndShowmode_::Show)) {
+				if (sw.isIncluded(WndShowmode_::Max))
+					return SW_SHOWMAXIMIZED;
+				else if (sw.isIncluded(WndShowmode_::Min)) {
+					if (sw.isIncluded(WndShowmode_::Inactive))
+						return SW_SHOWMINNOACTIVE;
+					else
+						return SW_SHOWMINIMIZED;
+				}
+				else if (sw.isIncluded(WndShowmode_::Normal)) {
+					if (sw.isIncluded(WndShowmode_::Inactive))
+						return SW_SHOWNOACTIVATE;
+					else
+						return SW_SHOWNORMAL;
+				}
+				else if (sw.isIncluded(WndShowmode_::Inactive))
+					return SW_SHOWNA;
+				else
+					return SW_SHOW;
+			}
+			else if (sw.isIncluded(WndShowmode_::Default))
+				return SW_SHOWDEFAULT;
+			else if (sw.isIncluded(WndShowmode_::ForceMin))
+				return SW_FORCEMINIMIZE;
+		}
+		//~test code
 
 		//Window表示形式
 		enum class WndShowMode : Word {
@@ -148,8 +203,8 @@ namespace wawl {
 			MinimizedShow = SW_SHOWMINIMIZED,
 			InactivateMinimized = SW_SHOWMINNOACTIVE,
 			NoactivateShow = SW_SHOWNA,
-			NoactivateNormalShow = SW_SHOWNOACTIVATE,
-			NormalShow = SW_SHOWNORMAL
+			NormalShow = SW_SHOWNORMAL,
+			NoactivateNormalShow = SW_SHOWNOACTIVATE
 		};
 		using UnifyWndShowMode = _impl_UnifyEnum < WndShowMode > ;
 		

@@ -34,7 +34,7 @@ namespace wawl {
 			::SECURITY_DESCRIPTOR& operator () () {
 				return secDesc_;
 			}
-			const ::SECURITY_DESCRIPTOR& operator () () const{
+			const ::SECURITY_DESCRIPTOR& operator () () const {
 				return secDesc_;
 			}
 
@@ -43,23 +43,34 @@ namespace wawl {
 
 		};
 		//セキュリティ記述子
-		class SecurityAttrib{
+		class SecurityAttrib {
+			friend SecurityAttrib;
+
 		public:
-			SecurityAttrib(const SecurityAttrib&) = default;
 			SecurityAttrib(SecurityAttrib&&) = default;
-			SecurityAttrib& operator = (const SecurityAttrib&) = default;
 			SecurityAttrib& operator = (SecurityAttrib&&) = default;
 
 			SecurityAttrib(bool doInheritHandle, const SecurityDesc& secDesc) :
-				mySecDesc_(std::make_shared<SecurityDesc>(secDesc)) {
+				secDesc_(std::make_unique<SecurityDesc>(secDesc)) {
 				secAttr_.nLength = sizeof(::SECURITY_ATTRIBUTES);
 				secAttr_.bInheritHandle = doInheritHandle;
-				secAttr_.lpSecurityDescriptor = mySecDesc_.get();
+				secAttr_.lpSecurityDescriptor = &secDesc_->get();
 			}
 			explicit SecurityAttrib(bool doInheritHandle = false) {
 				secAttr_.nLength = sizeof(::SECURITY_ATTRIBUTES);
 				secAttr_.bInheritHandle = doInheritHandle;
 				secAttr_.lpSecurityDescriptor = nullptr;
+			}
+			SecurityAttrib(const SecurityAttrib& val) {
+				secAttr_.nLength = sizeof(::SECURITY_ATTRIBUTES);
+				secAttr_.bInheritHandle = val.get().bInheritHandle;
+
+				if (val.secDesc_ != nullptr) {
+					secDesc_ = std::make_unique<SecurityDesc>(*val.secDesc_);
+					secAttr_.lpSecurityDescriptor = secDesc_.get();
+				}
+				else
+					secAttr_.lpSecurityDescriptor = nullptr;
 			}
 			
 			//内部の値を取得
@@ -79,8 +90,8 @@ namespace wawl {
 		private:
 			//本体
 			::SECURITY_ATTRIBUTES secAttr_;
-
-			std::shared_ptr<SecurityDesc> mySecDesc_;
+			//自分のSecurityDesc
+			std::unique_ptr<SecurityDesc> secDesc_ = nullptr;
 
 		};
 
@@ -91,12 +102,7 @@ namespace wawl {
 			Red = BACKGROUND_RED,
 			Intensity = BACKGROUND_INTENSITY
 		};
-		//CUIでの文字列色
-		using ConsoleStrColor = ConsoleColor;
-		using UnifyConsoleStrColor = _impl_UnifyEnum < ConsoleStrColor >;
-		//CUIでの背景色
-		using ConsoleBgColor = ConsoleColor;
-		using UnifyConsoleBgColor = _impl_UnifyEnum < ConsoleBgColor >;
+		using UnifyConsoleColor = _impl_UnifyEnum < ConsoleColor >;
 
 		//アプリケーション起動時のオプション
 		enum class StartupOption : Dword {
@@ -326,8 +332,8 @@ namespace wawl {
 				const Position* wndPos = nullptr,
 				const Rectangle* wndSize = nullptr,
 				const Rectangle* consoleBuf = nullptr,
-				const UnifyConsoleStrColor* consoleStrColors = nullptr,
-				const UnifyConsoleBgColor* consoleBgColors = nullptr,
+				const UnifyConsoleColor* consoleStrColors = nullptr,
+				const UnifyConsoleColor* consoleBgColors = nullptr,
 				const UnifyStartupOption* startupOptions = nullptr,
 				const UnifyWndShowMode* wndShowModes = nullptr,
 				const File* stdInput = nullptr,
@@ -443,8 +449,8 @@ namespace wawl {
 				) {}
 			StartupInfo(
 				const Rectangle& consoleBuf,
-				const UnifyConsoleStrColor& consoleStrColors,
-				const UnifyConsoleBgColor& consoleBgColors
+				const UnifyConsoleColor& consoleStrColors,
+				const UnifyConsoleColor& consoleBgColors
 				) :
 				StartupInfo(
 				nullptr,
@@ -481,8 +487,8 @@ namespace wawl {
 				) {}
 			StartupInfo(
 				const Rectangle& consoleBuf,
-				const UnifyConsoleStrColor& consoleStrColors,
-				const UnifyConsoleBgColor& consoleBgColors,
+				const UnifyConsoleColor& consoleStrColors,
+				const UnifyConsoleColor& consoleBgColors,
 				const File& stdInput,
 				const File& stdOutput,
 				const File& stdError
@@ -507,8 +513,8 @@ namespace wawl {
 				const Position& wndPos,
 				const Rectangle& wndSize,
 				const Rectangle& consoleBuf,
-				const UnifyConsoleStrColor& consoleStrColors,
-				const UnifyConsoleBgColor& consoleBgColors,
+				const UnifyConsoleColor& consoleStrColors,
+				const UnifyConsoleColor& consoleBgColors,
 				const UnifyStartupOption& startupOptions,
 				const UnifyWndShowMode& wndShowModes,
 				const File& stdInput,
