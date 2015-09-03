@@ -49,7 +49,7 @@ namespace wawl {
 		};
 		using UnifyMenuOption = _impl_UnifyEnum<MenuOption>;
 
-		enum class MenuType : unsigned int {
+		enum class MenuState : unsigned int {
 			Check = MFS_CHECKED,
 			Uncheck = MFS_UNCHECKED,
 			Default = MFS_DEFAULT,
@@ -58,11 +58,11 @@ namespace wawl {
 			Hilite = MFS_HILITE,
 			Unhilite = MFS_UNHILITE
 		};
-		using UnifyMenuType = _impl_UnifyEnum<MenuType>;
+		using UnifyMenuType = _impl_UnifyEnum<MenuState>;
 
-		class MenuInfo {
+		class MenuItem {
 		public:
-			MenuInfo(
+			MenuItem(
 				const UnifyMenuOption* option,
 				const UnifyMenuType* type
 				) {
@@ -105,7 +105,7 @@ namespace wawl {
 			int id_ = idCap_;
 
 		};
-		int MenuInfo::idCap_ = 0;
+		int MenuItem::idCap_ = 0;
 
 		//ToDo : MENUÇÃÉâÉbÉpçÏÇÈ
 		class Menu {
@@ -122,6 +122,7 @@ namespace wawl {
 			}
 
 			Menu& add(const Menu& child) {
+
 			}
 
 		private:

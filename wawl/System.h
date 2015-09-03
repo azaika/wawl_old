@@ -8,6 +8,7 @@
 
 //wawl based Header
 #include "BaseType.h"
+#include"FileSystem.h"
 
 //ユーザー定義Main
 void wawlMain(const wawl::TString&);
@@ -91,6 +92,101 @@ namespace wawl {
 		TString _impl_System::cmdArgStr_;
 		int _impl_System::windowShowmode_ = 0;
 		int _impl_System::sysRes_ = 0;
+
+		//Registry testcode
+		namespace reg {
+			enum class RegistryOption {
+				BackupRestore = REG_OPTION_BACKUP_RESTORE,
+				CreateLink = REG_OPTION_CREATE_LINK,
+				NonVolatile = REG_OPTION_NON_VOLATILE,
+				OpenLink = REG_OPTION_OPEN_LINK,
+				Reserved = REG_OPTION_RESERVED,
+				Volatile = REG_OPTION_VOLATILE,
+			};
+			using UnifyRegistryOption = _impl_UnifyEnum<RegistryOption>;
+
+			enum class KeyOption {
+				AllAccess = KEY_ALL_ACCESS,
+				CreateLink = KEY_CREATE_LINK,
+				CreateSubKey = KEY_CREATE_SUB_KEY,
+				EnamerateSubKey = KEY_ENUMERATE_SUB_KEYS,
+				Event = KEY_EVENT,
+				Execute = KEY_EXECUTE,
+				LengthMask = KEY_LENGTH_MASK,
+				Notify = KEY_NOTIFY,
+				QueryValue = KEY_QUERY_VALUE,
+				Read = KEY_READ,
+				SetValue = KEY_SET_VALUE,
+				Wow64_32 = KEY_WOW64_32KEY,
+				Wow64_64 = KEY_WOW64_64KEY,
+				Wow64Res = KEY_WOW64_RES,
+				Write = KEY_WRITE,
+			};
+			using UnifyKeyOption = _impl_UnifyEnum<KeyOption>;
+
+			enum class RegistryType {
+				Binary = REG_BINARY,
+				DWord = REG_DWORD,
+				ExpandString = REG_EXPAND_SZ,
+				MultiString = REG_MULTI_SZ,
+				QWord = REG_QWORD,
+				String = REG_SZ,
+			};
+			using UnifyRegistryType = _impl_UnifyEnum<RegistryType>;
+
+
+			class Value {
+			public:
+				Value(void *value) {
+					this->value = value;
+				}
+
+				auto& get() {
+					return value;
+				}
+				const auto& get() const {
+					return value;
+				}
+				auto& operator () () {
+					return value;
+				}
+				const auto& operator () () const {
+					return value;
+				}
+
+				unsigned int size() {
+					return sizeof(value);
+				}
+
+			private:
+				void *value;
+
+			};
+
+			class Key {
+			public:
+				Key(HKEY CurrentKey, WString Name, RegistryOption regop, KeyOption keyop, fs::SecurityAttrib secatt) {
+					DWORD DisPosition;
+					ZeroMemory(_hkey, sizeof(_hkey));
+					RegCreateKeyEx(CurrentKey, Name.c_str(), NULL, L"", static_cast<UINT>(regop), static_cast<UINT>(keyop), &secatt.get(), &_hkey, &DisPosition);
+				}
+				~Key() {
+					RegCloseKey(_hkey);
+				}
+				void SetValue(WString Name, RegistryType RegType, Value value) {
+					RegSetValueEx(_hkey, Name.c_str(), NULL, static_cast<DWORD>(RegType), (const BYTE*)value(), value.size());
+				}
+				void DeleteValue(WString Name) {
+					RegDeleteValue(_hkey, Name.c_str());
+				}
+
+			private:
+				::HKEY _hkey;
+
+			};
+
+		}
+
 
 		bool runCmdLine(const TString& cmdLine, bool showWindow = false) {
 
