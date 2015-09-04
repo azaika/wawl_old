@@ -3,6 +3,7 @@
 //wawl Header
 #include "BaseType.h"
 //C++ STL
+#include<fstream>
 #include <memory>
 
 namespace wawl {
@@ -314,6 +315,46 @@ namespace wawl {
 			std::shared_ptr<_impl_UnderHandle> file_ = nullptr;
 			//àÍïîà¯êîÇÃï€ë∂
 			std::shared_ptr<SecurityAttrib> mySecAttr_ = nullptr;
+
+		};
+
+		//INIÉtÉ@ÉCÉã
+		class INI {
+		private:
+			TString FileName;
+
+		public:
+			INI() = default;
+			INI(const INI&) = default;
+
+			INI(TString FileName) {
+				open(FileName);
+			}
+
+			void open(TString FileName) {
+				this->FileName = FileName;
+				std::ifstream ifs(FileName);
+				if (ifs.fail()) {
+					std::ofstream ofs(FileName);
+					ofs.close();
+				}
+
+			}
+
+			TString ReadData(TString SectionName, TString KeyName) {
+				TCHAR *ret;
+				GetPrivateProfileString(SectionName.c_str(), KeyName.c_str(), L"", ret, sizeof(ret) / sizeof(TChar), FileName.c_str());
+				return ret;
+			}
+
+			void WriteData(TString SectionName, TString Data) {
+			
+				WritePrivateProfileSection(SectionName.c_str(), Data.c_str(),FileName.c_str());
+			}
+			void WriteData(TString SectionName,TString KeyName ,TString Data) {
+
+				WritePrivateProfileString(SectionName.c_str(), KeyName.c_str(),Data.c_str(), FileName.c_str());
+			}
 
 		};
 
@@ -811,4 +852,79 @@ namespace wawl {
 		};
 
 	} //::wawl::fs
+	  //Registry testcode
+	namespace reg {
+		enum class RegistryOption {
+			BackupRestore = REG_OPTION_BACKUP_RESTORE,
+			CreateLink = REG_OPTION_CREATE_LINK,
+			NonVolatile = REG_OPTION_NON_VOLATILE,
+			OpenLink = REG_OPTION_OPEN_LINK,
+			Reserved = REG_OPTION_RESERVED,
+			Volatile = REG_OPTION_VOLATILE,
+		};
+		using UnifyRegistryOption = _impl_UnifyEnum<RegistryOption>;
+
+		enum class KeyOption {
+			AllAccess = KEY_ALL_ACCESS,
+			CreateLink = KEY_CREATE_LINK,
+			CreateSubKey = KEY_CREATE_SUB_KEY,
+			EnamerateSubKey = KEY_ENUMERATE_SUB_KEYS,
+			Event = KEY_EVENT,
+			Execute = KEY_EXECUTE,
+			LengthMask = KEY_LENGTH_MASK,
+			Notify = KEY_NOTIFY,
+			QueryValue = KEY_QUERY_VALUE,
+			Read = KEY_READ,
+			SetValue = KEY_SET_VALUE,
+			Wow64_32 = KEY_WOW64_32KEY,
+			Wow64_64 = KEY_WOW64_64KEY,
+			Wow64Res = KEY_WOW64_RES,
+			Write = KEY_WRITE,
+		};
+		using UnifyKeyOption = _impl_UnifyEnum<KeyOption>;
+
+		enum class RegistryType {
+			Binary = REG_BINARY,
+			DWord = REG_DWORD,
+			ExpandString = REG_EXPAND_SZ,
+			MultiString = REG_MULTI_SZ,
+			QWord = REG_QWORD,
+			String = REG_SZ,
+		};
+		using UnifyRegistryType = _impl_UnifyEnum<RegistryType>;
+
+		class Value {
+		public:
+			
+		private:
+
+		};
+
+		class Key {
+		public:
+			Key(HKEY CurrentKey, WString Name, RegistryOption regop, KeyOption keyop, fs::SecurityAttrib secatt) {
+				DWORD DisPosition;
+				RegCreateKeyEx(CurrentKey, Name.c_str(), NULL, L"", static_cast<UINT>(regop), static_cast<UINT>(keyop), &secatt.get(), &_hkey, &DisPosition);
+			}
+			~Key() {
+				RegCloseKey(_hkey);
+			}
+			void SetValue(WString Name,WString value) {
+				RegSetValueEx(_hkey, Name.c_str(), NULL, REG_SZ, (const Byte*)value.c_str(), value.length()*sizeof(TChar));
+			}
+			void SetValue(WString Name, Dword value) {
+				RegSetValueEx(_hkey, Name.c_str(), NULL, REG_DWORD, (const Byte*)&value, sizeof(Dword));
+			}
+			void DeleteValue(WString Name) {
+				RegDeleteValue(_hkey, Name.c_str());
+			}
+
+
+
+		private:
+			::HKEY _hkey;
+
+		};
+
+	}
 } //::wawl
