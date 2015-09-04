@@ -20,12 +20,12 @@ void wawlMain(const wawl::TString& args) {
 		else if (getKeyState(Key::X))
 			wnd::showMessage(L"KeyX pushed", L"Input successed", wnd::ChoiceButton::OK);
 		else if (getKeyState(Key::R)) {
-			reg::Key a(HKEY_CURRENT_USER, L"Test", reg::RegistryOption::NonVolatile, reg::KeyOption::AllAccess, fs::SecurityAttrib());
-			a.SetValue(L"TestValue",0x00ffffff);
+			reg::RegistryKey a(HKEY_CURRENT_USER, L"Test", reg::RegistryOption::NonVolatile, reg::KeyOption::AllAccess, fs::SecurityAttrib());
+			a.setValue(L"TestValue",0x00ffffff);
 		}
 		else if (getKeyState(Key::I)) {
-			fs::INI aaa(L"./test.ini");
-			aaa.WriteData(L"Section", L"Key", L"Data");
+			fs::IniFile aaa(L"./test.ini");
+			aaa.writeData(L"Section", L"Key", L"Data");
 		}
 		else if (getKeyState(Key::One))
 			setMousePos({ 100, 100 });

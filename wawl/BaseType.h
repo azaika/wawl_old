@@ -33,6 +33,8 @@ namespace wawl {
 		using Word = ::WORD;
 		//•„†–³‚µ32bit®”
 		using Dword = ::DWORD;
+		//•„†‚È‚µ64bit®”
+		using Qword = unsigned long long;
 
 		//ƒ|ƒCƒ“ƒ^‚ğŠi”[‚·‚é®”Œ^
 		using IntPtr = ::INT_PTR;

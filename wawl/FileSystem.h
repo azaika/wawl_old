@@ -4,6 +4,9 @@
 #include "BaseType.h"
 //C++ STL
 #include<fstream>
+#include <algorithm>
+#include <cctype>
+#include <cstdio>
 #include <memory>
 
 namespace wawl {
@@ -187,6 +190,64 @@ namespace wawl {
 			EnableSecurityCamouflage = SECURITY_SQOS_PRESENT
 		};
 		using UnifyFileAttrib = _impl_UnifyEnum < FileAttrib >;
+
+		//ファイルタイム
+		class FileTime {
+		public:
+			FileTime() = default;
+			FileTime(const FileTime&) = default;
+			FileTime(const FILETIME& fileTime) {
+				set(fileTime);
+			}
+
+			void set(const FILETIME& fileTime) {
+				SYSTEMTIME systemTime;
+				FileTimeToSystemTime(&fileTime, &systemTime);
+				year_ = systemTime.wYear;
+				month_ = systemTime.wMonth;
+				day_ = systemTime.wDay;
+				dayOfWeek_ = systemTime.wDayOfWeek;
+				hour_ = systemTime.wHour;
+				minute_ = systemTime.wMinute;
+				second_ = systemTime.wSecond;
+				milliSecond_ = systemTime.wMilliseconds;
+				week_ = static_cast<Week>(systemTime.wDayOfWeek);
+			}
+
+			Word get(const TString& value) {
+				std::transform(value.begin(), value.end(), value.begin(), tolower);
+				if (value == L"year")
+					return year_;
+				if (value == L"month")
+					return month_;
+				if (value == L"day")
+					return day_;
+				if (value == L"dayofweek")
+					return dayOfWeek_;
+				if (value == L"hour")
+					return hour_;
+				if (value == L"minute")
+					return minute_;
+				if (value == L"second")
+					return second_;
+				if (value == L"millisecond")
+					return milliSecond_;
+				if (value == L"week")
+					return week_;
+			}
+
+		private:
+			Word year_,month_,day_,dayOfWeek_,hour_,minute_,second_,milliSecond_;
+			enum Week : Word {
+				Sunday,
+				Monday,
+				TuesDay,
+				WednesDay,
+				ThursDay,
+				FriDay,
+				SaturDay,
+			}week_;
+		};
 
 		//ファイル
 		class File {
@@ -893,15 +954,11 @@ namespace wawl {
 		};
 		using UnifyRegistryType = _impl_UnifyEnum<RegistryType>;
 
-		class RegistryValue {
-		public:
-			
-		private:
-
-		};
-
 		class RegistryKey {
 		public:
+			RegistryKey(HKEY thisKey) {
+				hkey_ = thisKey;
+			}
 			RegistryKey(HKEY currentKey, const TString& name, const RegistryOption& regOp, const RegistryKeyOption& keyOp, const fs::SecurityAttrib& secAtt) {
 				DWORD DisPosition;
 				RegCreateKeyEx(currentKey, name.c_str(), NULL, L"", static_cast<UINT>(regOp), static_cast<UINT>(keyOp), (LPSECURITY_ATTRIBUTES)&secAtt.get(), &hkey_, &DisPosition);
@@ -915,11 +972,44 @@ namespace wawl {
 			void setValue(const TString& name,const Dword& value) {
 				RegSetValueEx(hkey_, name.c_str(), NULL, static_cast<UINT>(RegistryType::DWord), (const Byte*)&value, sizeof(Dword));
 			}
+			void setValue(const TString& name, const Qword& value) {
+				RegSetValueEx(hkey_, name.c_str(), NULL, static_cast<UINT>(RegistryType::QWord), (const Byte*)&value, sizeof(Qword));
+			}
+			auto& getValue(const TString& name) {
+				Byte *data;
+				RegQueryValueEx(hkey_, name.c_str(), NULL, NULL, data, NULL);
+				return data;
+			}
 			void deleteValue(const TString& name) {
 				RegDeleteValue(hkey_, name.c_str());
 			}
+			RegistryKey getKey(const TString& name) {
+				::HKEY retHKey;
+				RegOpenKeyEx(hkey_, name.c_str(), NULL, NULL, &retHKey);
+				RegistryKey ret(retHKey);
+				return ret;
+			}
+
 		private:
 			::HKEY hkey_;
+			TString name_;
+			std::vector<RegistryKey> subKeys_;
+			fs::SecurityDesc secDesc;
+			fs::FileTime fileTime_;
+			void getInfo() {
+				Dword numberOfSubKey;
+				Dword numberOfValues;
+				FILETIME fileTime;
+				RegQueryInfoKey(hkey_, (LPWSTR)name_.c_str(), NULL, NULL, &numberOfSubKey, NULL, NULL, &numberOfValues, NULL, NULL, NULL, &fileTime);
+				fileTime_.set(fileTime);
+
+				for (int i = 0; i < numberOfSubKey; i++) {
+					TString name;
+					FILETIME fileTime1;
+					RegEnumKeyEx(hkey_, i, (LPWSTR)name.c_str(), NULL, NULL, NULL, NULL, &fileTime1);
+				}
+
+			}
 
 		};
 
