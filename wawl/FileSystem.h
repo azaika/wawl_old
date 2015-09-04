@@ -319,41 +319,41 @@ namespace wawl {
 		};
 
 		//INIƒtƒ@ƒCƒ‹
-		class INI {
+		class IniFile {
 		private:
-			TString FileName;
+			TString fileName_;
 
 		public:
-			INI() = default;
-			INI(const INI&) = default;
+			IniFile() = default;
+			IniFile(const IniFile&) = default;
 
-			INI(TString FileName) {
-				open(FileName);
+			IniFile(const TString& fileName) {
+				open(fileName);
 			}
 
-			void open(TString FileName) {
-				this->FileName = FileName;
-				std::ifstream ifs(FileName);
+			void open(const TString& fileName) {
+				this->fileName_ = fileName;
+				std::ifstream ifs(fileName);
 				if (ifs.fail()) {
-					std::ofstream ofs(FileName);
+					std::ofstream ofs(fileName);
 					ofs.close();
 				}
 
 			}
 
-			TString ReadData(TString SectionName, TString KeyName) {
+			TString readData(const TString& sectionName, const TString& keyName) {
 				TCHAR *ret;
-				GetPrivateProfileString(SectionName.c_str(), KeyName.c_str(), L"", ret, sizeof(ret) / sizeof(TChar), FileName.c_str());
+				GetPrivateProfileString(sectionName.c_str(), keyName.c_str(), L"", ret, sizeof(ret) / sizeof(TChar), fileName_.c_str());
 				return ret;
 			}
 
-			void WriteData(TString SectionName, TString Data) {
+			void writeData(const TString& sectionName, const TString& data) {
 			
-				WritePrivateProfileSection(SectionName.c_str(), Data.c_str(),FileName.c_str());
+				WritePrivateProfileSection(sectionName.c_str(), data.c_str(),fileName_.c_str());
 			}
-			void WriteData(TString SectionName,TString KeyName ,TString Data) {
+			void writeData(const TString& sectionName,const TString& keyName ,const TString& data) {
 
-				WritePrivateProfileString(SectionName.c_str(), KeyName.c_str(),Data.c_str(), FileName.c_str());
+				WritePrivateProfileString(sectionName.c_str(), keyName.c_str(),data.c_str(), fileName_.c_str());
 			}
 
 		};
@@ -864,7 +864,7 @@ namespace wawl {
 		};
 		using UnifyRegistryOption = _impl_UnifyEnum<RegistryOption>;
 
-		enum class KeyOption {
+		enum class RegistryKeyOption {
 			AllAccess = KEY_ALL_ACCESS,
 			CreateLink = KEY_CREATE_LINK,
 			CreateSubKey = KEY_CREATE_SUB_KEY,
@@ -881,7 +881,7 @@ namespace wawl {
 			Wow64Res = KEY_WOW64_RES,
 			Write = KEY_WRITE,
 		};
-		using UnifyKeyOption = _impl_UnifyEnum<KeyOption>;
+		using UnifyKeyOption = _impl_UnifyEnum<RegistryKeyOption>;
 
 		enum class RegistryType {
 			Binary = REG_BINARY,
@@ -893,36 +893,33 @@ namespace wawl {
 		};
 		using UnifyRegistryType = _impl_UnifyEnum<RegistryType>;
 
-		class Value {
+		class RegistryValue {
 		public:
 			
 		private:
 
 		};
 
-		class Key {
+		class RegistryKey {
 		public:
-			Key(HKEY CurrentKey, WString Name, RegistryOption regop, KeyOption keyop, fs::SecurityAttrib secatt) {
+			RegistryKey(HKEY currentKey, const TString& name, const RegistryOption& regOp, const RegistryKeyOption& keyOp, const fs::SecurityAttrib& secAtt) {
 				DWORD DisPosition;
-				RegCreateKeyEx(CurrentKey, Name.c_str(), NULL, L"", static_cast<UINT>(regop), static_cast<UINT>(keyop), &secatt.get(), &_hkey, &DisPosition);
+				RegCreateKeyEx(currentKey, name.c_str(), NULL, L"", static_cast<UINT>(regOp), static_cast<UINT>(keyOp), (LPSECURITY_ATTRIBUTES)&secAtt.get(), &hkey_, &DisPosition);
 			}
-			~Key() {
-				RegCloseKey(_hkey);
+			~RegistryKey() {
+				RegCloseKey(hkey_);
 			}
-			void SetValue(WString Name,WString value) {
-				RegSetValueEx(_hkey, Name.c_str(), NULL, REG_SZ, (const Byte*)value.c_str(), value.length()*sizeof(TChar));
+			void setValue(const TString& name,const TString& value) {
+				RegSetValueEx(hkey_, name.c_str(), NULL, static_cast<UINT>(RegistryType::String), (const Byte*)value.c_str(), value.length()*sizeof(TChar));
 			}
-			void SetValue(WString Name, Dword value) {
-				RegSetValueEx(_hkey, Name.c_str(), NULL, REG_DWORD, (const Byte*)&value, sizeof(Dword));
+			void setValue(const TString& name,const Dword& value) {
+				RegSetValueEx(hkey_, name.c_str(), NULL, static_cast<UINT>(RegistryType::DWord), (const Byte*)&value, sizeof(Dword));
 			}
-			void DeleteValue(WString Name) {
-				RegDeleteValue(_hkey, Name.c_str());
+			void deleteValue(const TString& name) {
+				RegDeleteValue(hkey_, name.c_str());
 			}
-
-
-
 		private:
-			::HKEY _hkey;
+			::HKEY hkey_;
 
 		};
 
