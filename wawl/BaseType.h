@@ -27,6 +27,8 @@ namespace wawl {
 		//”Ä—p•¶š—ñŒ^
 		using TString = std::basic_string < TChar > ;
 
+		//À¿“I‚É‚Íint‚¾‚¯‚Çˆê‰éŒ¾
+		using Bool = ::BOOL;
 		//•„†–³‚µ8bit®”
 		using Byte = ::BYTE;
 		//•„†–³‚µ16bit®”

@@ -196,9 +196,6 @@ namespace wawl {
 		public:
 			FileTime() = default;
 			FileTime(const FileTime&) = default;
-			FileTime(const FILETIME& fileTime) {
-				set(fileTime);
-			}
 
 			void set(const FILETIME& fileTime) {
 				SYSTEMTIME systemTime;
@@ -214,8 +211,12 @@ namespace wawl {
 				week_ = static_cast<Week>(systemTime.wDayOfWeek);
 			}
 
+			::FILETIME operator()() {
+				return Entity;
+			}
+
 			Word get(const TString& value) {
-				std::transform(value.begin(), value.end(), value.begin(), tolower);
+				
 				if (value == L"year")
 					return year_;
 				if (value == L"month")
@@ -237,6 +238,7 @@ namespace wawl {
 			}
 
 		private:
+			::FILETIME Entity;
 			Word year_,month_,day_,dayOfWeek_,hour_,minute_,second_,milliSecond_;
 			enum Week : Word {
 				Sunday,
@@ -404,17 +406,17 @@ namespace wawl {
 
 			TString readData(const TString& sectionName, const TString& keyName) {
 				TCHAR *ret;
-				GetPrivateProfileString(sectionName.c_str(), keyName.c_str(), L"", ret, sizeof(ret) / sizeof(TChar), fileName_.c_str());
+				::GetPrivateProfileString(sectionName.c_str(), keyName.c_str(), L"", ret, sizeof(ret) / sizeof(TChar), fileName_.c_str());
 				return ret;
 			}
 
 			void writeData(const TString& sectionName, const TString& data) {
 			
-				WritePrivateProfileSection(sectionName.c_str(), data.c_str(),fileName_.c_str());
+				::WritePrivateProfileSection(sectionName.c_str(), data.c_str(),fileName_.c_str());
 			}
 			void writeData(const TString& sectionName,const TString& keyName ,const TString& data) {
 
-				WritePrivateProfileString(sectionName.c_str(), keyName.c_str(),data.c_str(), fileName_.c_str());
+				::WritePrivateProfileString(sectionName.c_str(), keyName.c_str(),data.c_str(), fileName_.c_str());
 			}
 
 		};
@@ -912,6 +914,39 @@ namespace wawl {
 			
 		};
 
+		class Dll {
+		public:
+			Dll(TString fileName) {
+				hmodule_ = ::LoadLibrary(fileName.c_str());
+			}
+			~Dll() {
+				::FreeLibrary(hmodule_);
+			}
+
+			auto& get() {
+				return hmodule_;
+			}
+			const auto& get() const{
+				return hmodule_;
+			}
+			auto& operator()() {
+				return hmodule_;
+			}
+			const auto& operator()() const {
+				return hmodule_;
+			}
+
+			FARPROC getFunction(TString name) {
+				return ::GetProcAddress(hmodule_, (LPCSTR)name.c_str());
+			}
+
+		private:
+			::HMODULE hmodule_;
+		};
+
+		
+
+
 	} //::wawl::fs
 	  //Registry testcode
 	namespace reg {
@@ -961,23 +996,23 @@ namespace wawl {
 			}
 			RegistryKey(HKEY currentKey, const TString& name, const RegistryOption& regOp, const RegistryKeyOption& keyOp, const fs::SecurityAttrib& secAtt) {
 				DWORD DisPosition;
-				RegCreateKeyEx(currentKey, name.c_str(), NULL, L"", static_cast<UINT>(regOp), static_cast<UINT>(keyOp), (LPSECURITY_ATTRIBUTES)&secAtt.get(), &hkey_, &DisPosition);
+				::RegCreateKeyEx(currentKey, name.c_str(), NULL, L"", static_cast<UINT>(regOp), static_cast<UINT>(keyOp), (LPSECURITY_ATTRIBUTES)&secAtt.get(), &hkey_, &DisPosition);
 			}
 			~RegistryKey() {
 				RegCloseKey(hkey_);
 			}
 			void setValue(const TString& name,const TString& value) {
-				RegSetValueEx(hkey_, name.c_str(), NULL, static_cast<UINT>(RegistryType::String), (const Byte*)value.c_str(), value.length()*sizeof(TChar));
+				::RegSetValueEx(hkey_, name.c_str(), NULL, static_cast<UINT>(RegistryType::String), (const Byte*)value.c_str(), value.length()*sizeof(TChar));
 			}
 			void setValue(const TString& name,const Dword& value) {
-				RegSetValueEx(hkey_, name.c_str(), NULL, static_cast<UINT>(RegistryType::DWord), (const Byte*)&value, sizeof(Dword));
+				::RegSetValueEx(hkey_, name.c_str(), NULL, static_cast<UINT>(RegistryType::DWord), (const Byte*)&value, sizeof(Dword));
 			}
 			void setValue(const TString& name, const Qword& value) {
-				RegSetValueEx(hkey_, name.c_str(), NULL, static_cast<UINT>(RegistryType::QWord), (const Byte*)&value, sizeof(Qword));
+				::RegSetValueEx(hkey_, name.c_str(), NULL, static_cast<UINT>(RegistryType::QWord), (const Byte*)&value, sizeof(Qword));
 			}
 			auto& getValue(const TString& name) {
 				Byte *data;
-				RegQueryValueEx(hkey_, name.c_str(), NULL, NULL, data, NULL);
+				::RegQueryValueEx(hkey_, name.c_str(), NULL, NULL, data, NULL);
 				return data;
 			}
 			void deleteValue(const TString& name) {
@@ -993,21 +1028,13 @@ namespace wawl {
 		private:
 			::HKEY hkey_;
 			TString name_;
-			std::vector<RegistryKey> subKeys_;
 			fs::SecurityDesc secDesc;
 			fs::FileTime fileTime_;
 			void getInfo() {
 				Dword numberOfSubKey;
 				Dword numberOfValues;
-				FILETIME fileTime;
-				RegQueryInfoKey(hkey_, (LPWSTR)name_.c_str(), NULL, NULL, &numberOfSubKey, NULL, NULL, &numberOfValues, NULL, NULL, NULL, &fileTime);
-				fileTime_.set(fileTime);
-
-				for (int i = 0; i < numberOfSubKey; i++) {
-					TString name;
-					FILETIME fileTime1;
-					RegEnumKeyEx(hkey_, i, (LPWSTR)name.c_str(), NULL, NULL, NULL, NULL, &fileTime1);
-				}
+				::RegQueryInfoKey(hkey_, (LPWSTR)name_.c_str(), NULL, NULL, &numberOfSubKey, NULL, NULL, &numberOfValues, NULL, NULL, NULL, &fileTime_());
+				
 
 			}
 

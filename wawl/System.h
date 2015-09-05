@@ -32,6 +32,38 @@ namespace wawl {
 			return static_cast<std::size_t>(timeGetTime());
 		}
 
+		//現在のユーザをログオフ
+		inline void logOff() {
+			::ExitWindows(0, 0);
+		}
+
+		//シャットダウンオプション
+		enum class ShutdownOption {
+			BootOption = EWX_BOOTOPTIONS,
+			Force = EWX_FORCE,
+			ForceIfHung = EWX_FORCEIFHUNG,
+			HybridShutDown = EWX_HYBRID_SHUTDOWN,
+			LogOff = EWX_LOGOFF,
+			PowerOff = EWX_POWEROFF,
+			QuickResolve = EWX_QUICKRESOLVE,
+			ReBoot = EWX_REBOOT,
+			RestartApp = EWX_RESTARTAPPS,
+			ShutDown=EWX_SHUTDOWN,
+		};
+		using UnifyShutdownOption = _impl_UnifyEnum<ShutdownOption>;
+
+
+		inline void ShutdownUtil(ShutdownOption shutdownType) {
+			::ExitWindowsEx(static_cast<UINT>(shutdownType), 0);
+		}
+
+		inline void Shutdown(TString computerName,TString message,Dword timeOut,Bool isForce,Bool isRestart) {
+			::InitiateSystemShutdown((LPWSTR)computerName.c_str(), (LPWSTR)message.c_str(), timeOut, isForce, isRestart);
+		}
+
+
+
+
 		class _impl_System final{
 		public:
 			_impl_System() = delete;
