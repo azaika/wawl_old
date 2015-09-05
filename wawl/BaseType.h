@@ -27,12 +27,16 @@ namespace wawl {
 		//汎用文字列型
 		using TString = std::basic_string < TChar > ;
 
+		//実質的にはintだけど一応宣言
+		using Bool = ::BOOL;
 		//符号無し8bit整数
 		using Byte = ::BYTE;
 		//符号無し16bit整数
 		using Word = ::WORD;
 		//符号無し32bit整数
 		using Dword = ::DWORD;
+		//符号なし64bit整数
+		using Qword = unsigned long long;
 
 		//ポインタを格納する整数型
 		using IntPtr = ::INT_PTR;

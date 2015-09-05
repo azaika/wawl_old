@@ -3,6 +3,10 @@
 //wawl Header
 #include "BaseType.h"
 //C++ STL
+#include<fstream>
+#include <algorithm>
+#include <cctype>
+#include <cstdio>
 #include <memory>
 
 namespace wawl {
@@ -187,6 +191,66 @@ namespace wawl {
 		};
 		using UnifyFileAttrib = _impl_UnifyEnum < FileAttrib >;
 
+		//ファイルタイム
+		class FileTime {
+		public:
+			FileTime() = default;
+			FileTime(const FileTime&) = default;
+
+			void set(const FILETIME& fileTime) {
+				SYSTEMTIME systemTime;
+				FileTimeToSystemTime(&fileTime, &systemTime);
+				year_ = systemTime.wYear;
+				month_ = systemTime.wMonth;
+				day_ = systemTime.wDay;
+				dayOfWeek_ = systemTime.wDayOfWeek;
+				hour_ = systemTime.wHour;
+				minute_ = systemTime.wMinute;
+				second_ = systemTime.wSecond;
+				milliSecond_ = systemTime.wMilliseconds;
+				week_ = static_cast<Week>(systemTime.wDayOfWeek);
+			}
+
+			::FILETIME operator()() {
+				return Entity;
+			}
+
+			Word get(const TString& value) {
+				
+				if (value == L"year")
+					return year_;
+				if (value == L"month")
+					return month_;
+				if (value == L"day")
+					return day_;
+				if (value == L"dayofweek")
+					return dayOfWeek_;
+				if (value == L"hour")
+					return hour_;
+				if (value == L"minute")
+					return minute_;
+				if (value == L"second")
+					return second_;
+				if (value == L"millisecond")
+					return milliSecond_;
+				if (value == L"week")
+					return week_;
+			}
+
+		private:
+			::FILETIME Entity;
+			Word year_,month_,day_,dayOfWeek_,hour_,minute_,second_,milliSecond_;
+			enum Week : Word {
+				Sunday,
+				Monday,
+				TuesDay,
+				WednesDay,
+				ThursDay,
+				FriDay,
+				SaturDay,
+			}week_;
+		};
+
 		//ファイル
 		class File {
 		public:
@@ -314,6 +378,46 @@ namespace wawl {
 			std::shared_ptr<_impl_UnderHandle> file_ = nullptr;
 			//一部引数の保存
 			std::shared_ptr<SecurityAttrib> mySecAttr_ = nullptr;
+
+		};
+
+		//INIファイル
+		class IniFile {
+		private:
+			TString fileName_;
+
+		public:
+			IniFile() = default;
+			IniFile(const IniFile&) = default;
+
+			IniFile(const TString& fileName) {
+				open(fileName);
+			}
+
+			void open(const TString& fileName) {
+				this->fileName_ = fileName;
+				std::ifstream ifs(fileName);
+				if (ifs.fail()) {
+					std::ofstream ofs(fileName);
+					ofs.close();
+				}
+
+			}
+
+			TString readData(const TString& sectionName, const TString& keyName) {
+				TCHAR *ret;
+				::GetPrivateProfileString(sectionName.c_str(), keyName.c_str(), L"", ret, sizeof(ret) / sizeof(TChar), fileName_.c_str());
+				return ret;
+			}
+
+			void writeData(const TString& sectionName, const TString& data) {
+			
+				::WritePrivateProfileSection(sectionName.c_str(), data.c_str(),fileName_.c_str());
+			}
+			void writeData(const TString& sectionName,const TString& keyName ,const TString& data) {
+
+				::WritePrivateProfileString(sectionName.c_str(), keyName.c_str(),data.c_str(), fileName_.c_str());
+			}
 
 		};
 
@@ -810,5 +914,131 @@ namespace wawl {
 			
 		};
 
+		class Dll {
+		public:
+			Dll(TString fileName) {
+				hmodule_ = ::LoadLibrary(fileName.c_str());
+			}
+			~Dll() {
+				::FreeLibrary(hmodule_);
+			}
+
+			auto& get() {
+				return hmodule_;
+			}
+			const auto& get() const{
+				return hmodule_;
+			}
+			auto& operator()() {
+				return hmodule_;
+			}
+			const auto& operator()() const {
+				return hmodule_;
+			}
+
+			FARPROC getFunction(TString name) {
+				return ::GetProcAddress(hmodule_, (LPCSTR)name.c_str());
+			}
+
+		private:
+			::HMODULE hmodule_;
+		};
+
+		
+
+
 	} //::wawl::fs
+	  //Registry testcode
+	namespace reg {
+		enum class RegistryOption {
+			BackupRestore = REG_OPTION_BACKUP_RESTORE,
+			CreateLink = REG_OPTION_CREATE_LINK,
+			NonVolatile = REG_OPTION_NON_VOLATILE,
+			OpenLink = REG_OPTION_OPEN_LINK,
+			Reserved = REG_OPTION_RESERVED,
+			Volatile = REG_OPTION_VOLATILE,
+		};
+		using UnifyRegistryOption = _impl_UnifyEnum<RegistryOption>;
+
+		enum class RegistryKeyOption {
+			AllAccess = KEY_ALL_ACCESS,
+			CreateLink = KEY_CREATE_LINK,
+			CreateSubKey = KEY_CREATE_SUB_KEY,
+			EnamerateSubKey = KEY_ENUMERATE_SUB_KEYS,
+			Event = KEY_EVENT,
+			Execute = KEY_EXECUTE,
+			LengthMask = KEY_LENGTH_MASK,
+			Notify = KEY_NOTIFY,
+			QueryValue = KEY_QUERY_VALUE,
+			Read = KEY_READ,
+			SetValue = KEY_SET_VALUE,
+			Wow64_32 = KEY_WOW64_32KEY,
+			Wow64_64 = KEY_WOW64_64KEY,
+			Wow64Res = KEY_WOW64_RES,
+			Write = KEY_WRITE,
+		};
+		using UnifyKeyOption = _impl_UnifyEnum<RegistryKeyOption>;
+
+		enum class RegistryType {
+			Binary = REG_BINARY,
+			DWord = REG_DWORD,
+			ExpandString = REG_EXPAND_SZ,
+			MultiString = REG_MULTI_SZ,
+			QWord = REG_QWORD,
+			String = REG_SZ,
+		};
+		using UnifyRegistryType = _impl_UnifyEnum<RegistryType>;
+
+		class RegistryKey {
+		public:
+			RegistryKey(HKEY thisKey) {
+				hkey_ = thisKey;
+			}
+			RegistryKey(HKEY currentKey, const TString& name, const RegistryOption& regOp, const RegistryKeyOption& keyOp, const fs::SecurityAttrib& secAtt) {
+				DWORD DisPosition;
+				::RegCreateKeyEx(currentKey, name.c_str(), NULL, L"", static_cast<UINT>(regOp), static_cast<UINT>(keyOp), (LPSECURITY_ATTRIBUTES)&secAtt.get(), &hkey_, &DisPosition);
+			}
+			~RegistryKey() {
+				RegCloseKey(hkey_);
+			}
+			void setValue(const TString& name,const TString& value) {
+				::RegSetValueEx(hkey_, name.c_str(), NULL, static_cast<UINT>(RegistryType::String), (const Byte*)value.c_str(), value.length()*sizeof(TChar));
+			}
+			void setValue(const TString& name,const Dword& value) {
+				::RegSetValueEx(hkey_, name.c_str(), NULL, static_cast<UINT>(RegistryType::DWord), (const Byte*)&value, sizeof(Dword));
+			}
+			void setValue(const TString& name, const Qword& value) {
+				::RegSetValueEx(hkey_, name.c_str(), NULL, static_cast<UINT>(RegistryType::QWord), (const Byte*)&value, sizeof(Qword));
+			}
+			auto& getValue(const TString& name) {
+				Byte *data;
+				::RegQueryValueEx(hkey_, name.c_str(), NULL, NULL, data, NULL);
+				return data;
+			}
+			void deleteValue(const TString& name) {
+				RegDeleteValue(hkey_, name.c_str());
+			}
+			RegistryKey getKey(const TString& name) {
+				::HKEY retHKey;
+				RegOpenKeyEx(hkey_, name.c_str(), NULL, NULL, &retHKey);
+				RegistryKey ret(retHKey);
+				return ret;
+			}
+
+		private:
+			::HKEY hkey_;
+			TString name_;
+			fs::SecurityDesc secDesc;
+			fs::FileTime fileTime_;
+			void getInfo() {
+				Dword numberOfSubKey;
+				Dword numberOfValues;
+				::RegQueryInfoKey(hkey_, (LPWSTR)name_.c_str(), NULL, NULL, &numberOfSubKey, NULL, NULL, &numberOfValues, NULL, NULL, NULL, &fileTime_());
+				
+
+			}
+
+		};
+
+	}
 } //::wawl
