@@ -14,6 +14,12 @@ namespace wawl {
 		}
 		//~test code
 
+		enum class Msg : unsigned int {
+			Create = WM_CREATE,
+			Timer = WM_TIMER,
+			Destroy = WM_DESTROY,
+		};
+
 		enum class DefaultIcon : UintPtr {
 			App = reinterpret_cast<UintPtr>(IDI_APPLICATION),
 			Info = reinterpret_cast<UintPtr>(IDI_INFORMATION),
@@ -152,43 +158,46 @@ namespace wawl {
 		class Prop {
 		public:
 			Prop() {
-				ZeroMemory(&wndClass_, sizeof(wndClass_));
-				wndClass_.cbSize = sizeof(::WNDCLASSEX);
-				wndClass_.style = CS_HREDRAW | CS_VREDRAW;
-				wndClass_.lpfnWndProc = _impl_MsgProc;
-				wndClass_.hInstance = sys::getAppHandle();
-				wndClass_.hIcon = ::LoadIcon(nullptr, IDI_APPLICATION);
-				wndClass_.hIconSm = ::LoadIcon(nullptr, IDI_APPLICATION);
-				wndClass_.hCursor = ::LoadCursor(nullptr, IDC_ARROW);
-				wndClass_.hbrBackground = reinterpret_cast<::HBRUSH>(::GetStockObject(NULL_BRUSH));
-				wndClass_.lpszMenuName = nullptr;
-				wndClass_.lpszClassName = util::valToTStr(classNum_).c_str();
+				::WNDCLASSEX wndClass;
 
-				if (id_ = ::RegisterClassEx(&wndClass_), id_ == false)
-					throw std::runtime_error{"Failed to RegisterClassEx"};
+				ZeroMemory(&wndClass, sizeof(wndClass));
+				wndClass.cbSize = sizeof(::WNDCLASSEX);
+				wndClass.style = CS_HREDRAW | CS_VREDRAW;
+				wndClass.lpfnWndProc = _impl_MsgProc;
+				wndClass.hInstance = sys::getAppHandle();
+				wndClass.hIcon = ::LoadIcon(nullptr, IDI_APPLICATION);
+				wndClass.hIconSm = ::LoadIcon(nullptr, IDI_APPLICATION);
+				wndClass.hCursor = ::LoadCursor(nullptr, IDC_ARROW);
+				wndClass.hbrBackground = reinterpret_cast<::HBRUSH>(::GetStockObject(NULL_BRUSH));
+				wndClass.lpszMenuName = nullptr;
+				wndClass.lpszClassName = util::valToTStr(idCap_).c_str();
+
+				if (atom_ = ::RegisterClassEx(&wndClass), atom_ == false)
+					throw std::runtime_error{"Failed to RegisterClassEx. Error Code: " + std::to_string(::GetLastError())};
+
+				id_ = idCap_;
+				++idCap_;
 			}
 			//ToDo : コンストラクタの種類追加
 
-			auto& get() {
-				return wndClass_;
+			TString getName() const {
+				return util::valToTStr(id_);
 			}
-			const auto& get() const {
-				return wndClass_;
-			}
-			auto& operator () () {
-				return wndClass_;
-			}
-			const auto& operator () () const {
-				return wndClass_;
+			Word getId() const {
+				return atom_;
 			}
 
 		private:
-			static int classNum_;
-			Word id_;
-			::WNDCLASSEX wndClass_;
+			static int idCap_;
+			int id_;
+			Word atom_;
 
 		};
-		int Prop::classNum_ = 0;
+		int Prop::idCap_ = 0;
+
+		enum class ExtStyle : Dword {
+			
+		};
 
 		class Window {
 		public:
@@ -198,6 +207,7 @@ namespace wawl {
 					return 1;
 				else {
 					auto& wnd = *Window::winRefs_[hwnd];
+
 					if (wnd.msgProcs_.find(msg) == wnd.msgProcs_.end())
 						return ::DefWindowProc(hwnd, msg, wParam, lParam);
 					else
@@ -207,11 +217,30 @@ namespace wawl {
 				return 0;
 			}
 
+			Window() {
+				::HWND hwnd = nullptr;
+
+				
+
+				winRefs_.insert(std::pair<::HWND, Window*>{hwnd, this});
+			}
+
+			Window& addMsgProc(const Msg msg, const std::function<int(UintPtr, IntPtr)>& proc) {
+				msgProcs_.insert(std::pair<::UINT, std::function<int(UintPtr, IntPtr)>>{util::unpackEnum(msg), proc});
+
+				return *this;
+			}
+			Window& removeMsgProc(const Msg msg) {
+				msgProcs_.erase(util::unpackEnum(msg));
+
+				return *this;
+			}
+
 		private:
 			//自身への参照を保持
 			static std::unordered_map<::HWND, Window*> winRefs_;
 			//メッセージプロシージャ
-			std::unordered_map<::UINT, std::function<int(UintPtr, IntPtr)>> msgProcs_;
+			std::unordered_map<unsigned int, std::function<int(UintPtr, IntPtr)>> msgProcs_;
 			::HWND hwnd_;
 
 		};

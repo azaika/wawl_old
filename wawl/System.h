@@ -70,6 +70,7 @@ namespace wawl {
 			_impl_System(const _impl_System&) = delete;
 			_impl_System(_impl_System&&) = delete;
 			void operator = (const _impl_System&) = delete;
+			void operator = (_impl_System&&) = delete;
 
 			//コマンドライン引数を取得
 			friend inline TString getCmdLine() {
@@ -99,7 +100,7 @@ namespace wawl {
 					);
 			}
 
-			static void setWinMainArgs(const TString& cmdLine, int cmdShow) {
+			static void _impl_setWinMainArgs(const TString& cmdLine, int cmdShow) {
 				//初回呼び出しかどうか
 				static bool isFirst = true;
 
@@ -124,29 +125,6 @@ namespace wawl {
 		int _impl_System::windowShowmode_ = 0;
 		int _impl_System::sysRes_ = 0;
 
-
-		bool runCmdLine(const TString& cmdLine, bool showWindow = false) {
-
-			STARTUPINFO si;
-			PROCESS_INFORMATION pi = {};
-
-			//STARTUPINFO 構造体の内容を取得
-			GetStartupInfo(&si);
-
-			return ::CreateProcess(
-				nullptr,
-				const_cast<TChar*>(cmdLine.c_str()),
-				nullptr,
-				nullptr,
-				false,
-				(showWindow ? NULL : CREATE_NO_WINDOW),
-				nullptr,
-				nullptr,
-				&si,
-				&pi
-				) != 0;
-		}
-
 	} //::wawl::sys
 } //::wawl
 
@@ -158,7 +136,7 @@ int WINAPI _tWinMain(
 	) {
 	using namespace wawl;
 
-	sys::_impl_System::setWinMainArgs(cmdLine, cmdShow);
+	sys::_impl_System::_impl_setWinMainArgs(cmdLine, cmdShow);
 
 	wawlMain(cmdLine);
 

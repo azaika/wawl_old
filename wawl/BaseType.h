@@ -97,6 +97,10 @@ namespace wawl {
 				for (auto&& val : valList)
 					vals_ |= val;
 			}
+			constexpr _impl_UnifyEnum(const std::initializer_list<EnumType>& valList) {
+				for (auto&& val : valList)
+					vals_ |= static_cast<ValueType>(val);
+			}
 
 			//“à•”‚Ì’l‚ðŽæ“¾
 			ValueType& get() {
@@ -108,7 +112,7 @@ namespace wawl {
 			ValueType& operator () () {
 				return vals_;
 			}
-			constexpr const ValueType& operator () () const{
+			constexpr const ValueType& operator () () const {
 				return vals_;
 			}
 
@@ -187,6 +191,14 @@ namespace wawl {
 				else
 					return SW_SHOW;
 			}
+			else if (sw.isIncluded(WndShowmode_::Hide))
+				return SW_HIDE;
+			else if (sw.isIncluded(WndShowmode_::Restore))
+				return SW_RESTORE;
+			else if (sw.isIncluded(WndShowmode_::Max))
+				return SW_MAXIMIZE;
+			else if (sw.isIncluded(WndShowmode_::Min))
+				return SW_MINIMIZE;
 			else if (sw.isIncluded(WndShowmode_::Default))
 				return SW_SHOWDEFAULT;
 			else if (sw.isIncluded(WndShowmode_::ForceMin))
