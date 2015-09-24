@@ -10,7 +10,7 @@
 #include "BaseType.h"
 
 //ユーザー定義Main
-void wawlMain(const wawl::TString&);
+void wawlMain();
 
 namespace wawl {
 	namespace sys {
@@ -23,7 +23,7 @@ namespace wawl {
 		}
 
 		//完全なコマンドライン引数を取得
-		inline TString getFullCmdLine() {
+		inline TString getFullCmdArgs() {
 			return ::GetCommandLine();
 		}
 
@@ -32,39 +32,33 @@ namespace wawl {
 			return static_cast<std::size_t>(timeGetTime());
 		}
 
-		//現在のユーザをログオフ
-		inline void logOff() {
-			::ExitWindows(0, 0);
-		}
-
-		//シャットダウンオプション
-		enum class ShutdownOption {
-			BootOption = EWX_BOOTOPTIONS,
-			Force = EWX_FORCE,
-			ForceIfHung = EWX_FORCEIFHUNG,
-			HybridShutDown = EWX_HYBRID_SHUTDOWN,
-			LogOff = EWX_LOGOFF,
-			PowerOff = EWX_POWEROFF,
-			QuickResolve = EWX_QUICKRESOLVE,
-			ReBoot = EWX_REBOOT,
-			RestartApp = EWX_RESTARTAPPS,
-			ShutDown=EWX_SHUTDOWN,
+		enum class ExitMode : unsigned int {
+			Logoff = EWX_LOGOFF,
+			Poweroff = EWX_POWEROFF,
+			Reboot = EWX_REBOOT,
+			Shutdown = EWX_SHUTDOWN
 		};
-		using UnifyShutdownOption = _impl_UnifyEnum<ShutdownOption>;
-
-
-		inline void ShutdownUtil(ShutdownOption shutdownType) {
-			::ExitWindowsEx(static_cast<UINT>(shutdownType), 0);
+		inline bool Exit(const ExitMode mode) {
+			return ::ExitWindowsEx(static_cast<unsigned int>(mode), 0) != 0;
+		}
+		inline bool Exit(const ExitMode mode, bool doWaitHang) {
+			return ::ExitWindowsEx(static_cast<unsigned int>(mode) | (doWaitHang ? EWX_FORCEIFHUNG : EWX_FORCE), 0) != 0;
 		}
 
-		inline void Shutdown(TString computerName,TString message,Dword timeOut,Bool isForce,Bool isRestart) {
-			::InitiateSystemShutdown((LPWSTR)computerName.c_str(), (LPWSTR)message.c_str(), timeOut, isForce, isRestart);
+		inline bool StartShutdown(const TString& machineName, const TString& msg, Dword timeOut = 0, Bool isForce = false, Bool doRestart = false) {
+			return ::InitiateSystemShutdown(
+				const_cast<TChar*>(machineName.c_str()),
+				const_cast<TChar*>(msg.c_str()),
+				timeOut,
+				isForce,
+				doRestart
+				) != 0;
+		}
+		inline bool AbortShutdown(const TString& machineName) {
+			return ::AbortSystemShutdown(const_cast<TChar*>(machineName.c_str())) != 0;
 		}
 
-
-
-
-		class _impl_System final{
+		class _impl_System final {
 		public:
 			_impl_System() = delete;
 			_impl_System(const _impl_System&) = delete;
@@ -73,16 +67,16 @@ namespace wawl {
 			void operator = (_impl_System&&) = delete;
 
 			//コマンドライン引数を取得
-			friend inline TString getCmdLine() {
+			friend inline TString getCmdArgs() {
 				return cmdArgStr_;
 			}
-			
+
 			friend inline int getWndShowmode() {
 				return windowShowmode_;
 			}
 
 			//システムのタイマー分解能を変更。必ず終わったあとResetTimeResolution()を呼び出す
-			friend inline bool changeTimeResolution(unsigned int res) {
+			friend inline bool changeTimeRes(unsigned int res) {
 				return (
 					sysRes_ == 0 ?
 					sysRes_ = res, ::timeBeginPeriod(res) == TIMERR_NOERROR :
@@ -90,7 +84,7 @@ namespace wawl {
 					);
 			}
 			//システムのタイマー分解能を元に戻す
-			friend inline bool resetTimeResolution() {
+			friend inline bool resetTimeRes() {
 				int tmpRes = sysRes_;
 
 				return (
@@ -138,7 +132,7 @@ int WINAPI _tWinMain(
 
 	sys::_impl_System::_impl_setWinMainArgs(cmdLine, cmdShow);
 
-	wawlMain(cmdLine);
+	wawlMain();
 
 	return 0;
 }

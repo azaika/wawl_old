@@ -40,7 +40,7 @@ namespace wawl {
 		}
 
 #ifdef UNICODE
-		
+
 		inline TString toTString(const WString& str) {
 			return TString{ str };
 		}

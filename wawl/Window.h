@@ -56,21 +56,21 @@ namespace wawl {
 		using UnifyMenuOption = _impl_UnifyEnum<MenuOption>;
 
 		enum class MenuState : unsigned int {
+			Clear = NULL,
 			Check = MFS_CHECKED,
-			Uncheck = MFS_UNCHECKED,
 			Default = MFS_DEFAULT,
 			Disable = MFS_DISABLED,
-			Enable = MFS_ENABLED,
-			Hilite = MFS_HILITE,
-			Unhilite = MFS_UNHILITE
+			Hilite = MFS_HILITE
 		};
 		using UnifyMenuType = _impl_UnifyEnum<MenuState>;
 
-		class MenuItem {
+		template<typename T>
+		class _impl_MenuItem {
 		public:
-			MenuItem(
+			_impl_MenuItem(
 				const UnifyMenuOption* option,
-				const UnifyMenuType* type
+				const UnifyMenuType* type,
+				const T* subMenu
 				) {
 				::ZeroMemory(&info_, sizeof(info_));
 				info_.cbSize = sizeof(::MENUITEMINFO);
@@ -83,21 +83,25 @@ namespace wawl {
 				if (type != nullptr)
 					info_.fMask |= MIIM_STATE,
 					info_.fState = type->get();
+				if (subMenu != nullptr)
+					info_.fMask = MIIM_SUBMENU,
+					info_.hSubMenu = subMenu->get();
+				
 				//nullptrでなければmask追加して設定
 
 				++idCap_;
 			}
 
-			::MENUITEMINFO& get() {
+			auto& get() {
 				return info_;
 			}
-			const ::MENUITEMINFO& get() const {
+			const auto& get() const {
 				return info_;
 			}
-			::MENUITEMINFO& operator() () {
+			auto& operator() () {
 				return info_;
 			}
-			const ::MENUITEMINFO& operator() () const {
+			const auto& operator() () const {
 				return info_;
 			}
 
@@ -111,31 +115,41 @@ namespace wawl {
 			int id_ = idCap_;
 
 		};
+
+		class PopupMenu;
+		using MenuItem = _impl_MenuItem<PopupMenu>;
 		int MenuItem::idCap_ = 0;
 
-		//ToDo : MENUのラッパ作る
-		class Menu {
+		class PopupMenu {
 		public:
-			Menu(const Menu&) = default;
-			Menu(Menu&&) = default;
-			Menu& operator = (const Menu&) = default;
-			Menu& operator = (Menu&&) = default;
 
-			Menu() :
+		private:
+
+		};
+
+		//ToDo : MENUのラッパ作る
+		class MenuBar {
+		public:
+			MenuBar(const MenuBar&) = default;
+			MenuBar(MenuBar&&) = default;
+			MenuBar& operator = (const MenuBar&) = default;
+			MenuBar& operator = (MenuBar&&) = default;
+
+			MenuBar() :
 				menu_(::CreateMenu()) {
 				if (menu_ == nullptr)
-					throw std::runtime_error("Failed to CreateMenu");
+					throw std::runtime_error("Failed to CreateMenu.\nError Code: " + std::to_string(::GetLastError()));
 			}
 
-			Menu& add(const Menu& child) {
-
+			MenuBar& add(const MenuBar& child) {
+				return *this;
 			}
 
 		private:
 			::HMENU menu_ = nullptr;
-			
+
 		};
-		
+
 		enum class PropOption : unsigned int {
 			AlignClientByByte = CS_BYTEALIGNCLIENT,
 			AlignWndByByte = CS_BYTEALIGNWINDOW,
@@ -173,7 +187,7 @@ namespace wawl {
 				wndClass.lpszClassName = util::valToTStr(idCap_).c_str();
 
 				if (atom_ = ::RegisterClassEx(&wndClass), atom_ == false)
-					throw std::runtime_error{"Failed to RegisterClassEx. Error Code: " + std::to_string(::GetLastError())};
+					throw std::runtime_error{ "Failed to RegisterClassEx.\nError Code: " + std::to_string(::GetLastError()) };
 
 				id_ = idCap_;
 				++idCap_;
@@ -196,7 +210,7 @@ namespace wawl {
 		int Prop::idCap_ = 0;
 
 		enum class ExtStyle : Dword {
-			
+
 		};
 
 		class Window {
@@ -220,9 +234,7 @@ namespace wawl {
 			Window() {
 				::HWND hwnd = nullptr;
 
-				
-
-				winRefs_.insert(std::pair<::HWND, Window*>{hwnd, this});
+				winRefs_.insert(std::make_pair(hwnd, this));
 			}
 
 			Window& addMsgProc(const Msg msg, const std::function<int(UintPtr, IntPtr)>& proc) {

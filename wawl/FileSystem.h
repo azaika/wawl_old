@@ -3,7 +3,7 @@
 //wawl Header
 #include "BaseType.h"
 //C++ STL
-#include<fstream>
+#include <fstream>
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
@@ -76,12 +76,12 @@ namespace wawl {
 				else
 					secAttr_.lpSecurityDescriptor = nullptr;
 			}
-			
+
 			//内部の値を取得
 			::SECURITY_ATTRIBUTES& get() {
 				return secAttr_;
 			}
-			const ::SECURITY_ATTRIBUTES& get() const{
+			const ::SECURITY_ATTRIBUTES& get() const {
 				return secAttr_;
 			}
 			::SECURITY_ATTRIBUTES& operator () () {
@@ -191,66 +191,6 @@ namespace wawl {
 		};
 		using UnifyFileAttrib = _impl_UnifyEnum < FileAttrib >;
 
-		//ファイルタイム
-		class FileTime {
-		public:
-			FileTime() = default;
-			FileTime(const FileTime&) = default;
-
-			void set(const FILETIME& fileTime) {
-				SYSTEMTIME systemTime;
-				FileTimeToSystemTime(&fileTime, &systemTime);
-				year_ = systemTime.wYear;
-				month_ = systemTime.wMonth;
-				day_ = systemTime.wDay;
-				dayOfWeek_ = systemTime.wDayOfWeek;
-				hour_ = systemTime.wHour;
-				minute_ = systemTime.wMinute;
-				second_ = systemTime.wSecond;
-				milliSecond_ = systemTime.wMilliseconds;
-				week_ = static_cast<Week>(systemTime.wDayOfWeek);
-			}
-
-			::FILETIME operator()() {
-				return Entity;
-			}
-
-			Word get(const TString& value) {
-				
-				if (value == L"year")
-					return year_;
-				if (value == L"month")
-					return month_;
-				if (value == L"day")
-					return day_;
-				if (value == L"dayofweek")
-					return dayOfWeek_;
-				if (value == L"hour")
-					return hour_;
-				if (value == L"minute")
-					return minute_;
-				if (value == L"second")
-					return second_;
-				if (value == L"millisecond")
-					return milliSecond_;
-				if (value == L"week")
-					return week_;
-			}
-
-		private:
-			::FILETIME Entity;
-			Word year_,month_,day_,dayOfWeek_,hour_,minute_,second_,milliSecond_;
-			enum Week : Word {
-				Sunday,
-				Monday,
-				TuesDay,
-				WednesDay,
-				ThursDay,
-				FriDay,
-				SaturDay,
-			}week_;
-		};
-
 		//ファイル
 		class File {
 		public:
@@ -273,14 +213,14 @@ namespace wawl {
 					mySecAttr_ = std::make_shared<SecurityAttrib>(*secAttr);
 				file_ = std::shared_ptr<_impl_UnderHandle>(
 					::CreateFile(
-					(fileName == nullptr ? nullptr : fileName->c_str()),
-					(accessDesc == nullptr ? GENERIC_ALL : accessDesc->get()),
-					(shareMode == nullptr ? NULL : shareMode->get()),
-					(secAttr == nullptr ? nullptr : &(mySecAttr_->get())),
-					(createProv == nullptr ? CREATE_ALWAYS : createProv->get()),
-					(fileAttr == nullptr ? FILE_ATTRIBUTE_NORMAL : fileAttr->get()),
-					(baseFile == nullptr ? nullptr : baseFile->get())
-					),
+						(fileName == nullptr ? nullptr : fileName->c_str()),
+						(accessDesc == nullptr ? GENERIC_ALL : accessDesc->get()),
+						(shareMode == nullptr ? NULL : shareMode->get()),
+						(secAttr == nullptr ? nullptr : &(mySecAttr_->get())),
+						(createProv == nullptr ? CREATE_ALWAYS : createProv->get()),
+						(fileAttr == nullptr ? FILE_ATTRIBUTE_NORMAL : fileAttr->get()),
+						(baseFile == nullptr ? nullptr : baseFile->get())
+						),
 					[](::HANDLE h) { ::CloseHandle(h), delete h; }
 				);
 
@@ -292,28 +232,28 @@ namespace wawl {
 				const UnifyFileCreateProv& createProv
 				) :
 				File(
-				&fileName,
-				nullptr,
-				nullptr,
-				nullptr,
-				&createProv,
-				nullptr,
-				nullptr
-				) {}
+					&fileName,
+					nullptr,
+					nullptr,
+					nullptr,
+					&createProv,
+					nullptr,
+					nullptr
+					) {}
 			File(
 				const TString& fileName,
 				const UnifyFileCreateProv& createProv,
 				const File& baseFile
 				) :
 				File(
-				&fileName,
-				nullptr,
-				nullptr,
-				nullptr,
-				&createProv,
-				nullptr,
-				&baseFile
-				) {}
+					&fileName,
+					nullptr,
+					nullptr,
+					nullptr,
+					&createProv,
+					nullptr,
+					&baseFile
+					) {}
 			File(
 				const TString& fileName,
 				const UnifyAccessDesc& accessDesc,
@@ -321,14 +261,14 @@ namespace wawl {
 				const UnifyFileCreateProv& createProv
 				) :
 				File(
-				&fileName,
-				&accessDesc,
-				&shareMode,
-				nullptr,
-				&createProv,
-				nullptr,
-				nullptr
-				) {}
+					&fileName,
+					&accessDesc,
+					&shareMode,
+					nullptr,
+					&createProv,
+					nullptr,
+					nullptr
+					) {}
 			File(
 				const TString& fileName,
 				const UnifyAccessDesc& accessDesc,
@@ -338,14 +278,14 @@ namespace wawl {
 				const UnifyFileAttrib& fileAttr
 				) :
 				File(
-				&fileName,
-				&accessDesc,
-				&shareMode,
-				&secAttr,
-				&createProv,
-				&fileAttr,
-				nullptr
-				) {}
+					&fileName,
+					&accessDesc,
+					&shareMode,
+					&secAttr,
+					&createProv,
+					&fileAttr,
+					nullptr
+					) {}
 			File(
 				const TString& fileName,
 				const UnifyAccessDesc& accessDesc,
@@ -356,15 +296,15 @@ namespace wawl {
 				const File& baseFile
 				) :
 				File(
-				&fileName,
-				&accessDesc,
-				&shareMode,
-				&secAttr,
-				&createProv,
-				&fileAttr,
-				&baseFile
-				) {}
-			
+					&fileName,
+					&accessDesc,
+					&shareMode,
+					&secAttr,
+					&createProv,
+					&fileAttr,
+					&baseFile
+					) {}
+
 			//内部の値を取得
 			FileHandle get() const {
 				return file_.get();
@@ -372,52 +312,12 @@ namespace wawl {
 			FileHandle operator () () const {
 				return file_.get();
 			}
-			
+
 		private:
 			//本体
 			std::shared_ptr<_impl_UnderHandle> file_ = nullptr;
 			//一部引数の保存
 			std::shared_ptr<SecurityAttrib> mySecAttr_ = nullptr;
-
-		};
-
-		//INIファイル
-		class IniFile {
-		private:
-			TString fileName_;
-
-		public:
-			IniFile() = default;
-			IniFile(const IniFile&) = default;
-
-			IniFile(const TString& fileName) {
-				open(fileName);
-			}
-
-			void open(const TString& fileName) {
-				this->fileName_ = fileName;
-				std::ifstream ifs(fileName);
-				if (ifs.fail()) {
-					std::ofstream ofs(fileName);
-					ofs.close();
-				}
-
-			}
-
-			TString readData(const TString& sectionName, const TString& keyName) {
-				TCHAR *ret;
-				::GetPrivateProfileString(sectionName.c_str(), keyName.c_str(), L"", ret, sizeof(ret) / sizeof(TChar), fileName_.c_str());
-				return ret;
-			}
-
-			void writeData(const TString& sectionName, const TString& data) {
-			
-				::WritePrivateProfileSection(sectionName.c_str(), data.c_str(),fileName_.c_str());
-			}
-			void writeData(const TString& sectionName,const TString& keyName ,const TString& data) {
-
-				::WritePrivateProfileString(sectionName.c_str(), keyName.c_str(),data.c_str(), fileName_.c_str());
-			}
 
 		};
 
@@ -502,93 +402,93 @@ namespace wawl {
 				const Position& wndPos
 				) :
 				StartupInfo(
-				nullptr,
-				nullptr,
-				&wndPos,
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr
-				) {}
+					nullptr,
+					nullptr,
+					&wndPos,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr
+					) {}
 			StartupInfo(
 				const Position& wndPos,
 				const Rectangle& wndSize
 				) :
 				StartupInfo(
-				nullptr,
-				nullptr,
-				&wndPos,
-				&wndSize,
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr
-				) {}
+					nullptr,
+					nullptr,
+					&wndPos,
+					&wndSize,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr
+					) {}
 			StartupInfo(
 				const UnifyStartupOption& startupOptions,
 				const UnifyWndShowMode& wndShowModes
 				) :
 				StartupInfo(
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr,
-				&startupOptions,
-				&wndShowModes,
-				nullptr,
-				nullptr,
-				nullptr
-				) {}
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					&startupOptions,
+					&wndShowModes,
+					nullptr,
+					nullptr,
+					nullptr
+					) {}
 			StartupInfo(
 				const Rectangle& consoleBuf,
 				const UnifyConsoleColor& consoleStrColors,
 				const UnifyConsoleColor& consoleBgColors
 				) :
 				StartupInfo(
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr,
-				&consoleBuf,
-				&consoleStrColors,
-				&consoleBgColors,
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr
-				) {}
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					&consoleBuf,
+					&consoleStrColors,
+					&consoleBgColors,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr
+					) {}
 			StartupInfo(
 				const File& stdInput,
 				const File& stdOutput,
 				const File& stdError
 				) :
 				StartupInfo(
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr,
-				&stdInput,
-				&stdOutput,
-				&stdError
-				) {}
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					&stdInput,
+					&stdOutput,
+					&stdError
+					) {}
 			StartupInfo(
 				const Rectangle& consoleBuf,
 				const UnifyConsoleColor& consoleStrColors,
@@ -598,19 +498,19 @@ namespace wawl {
 				const File& stdError
 				) :
 				StartupInfo(
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr,
-				&consoleBuf,
-				&consoleStrColors,
-				&consoleBgColors,
-				nullptr,
-				nullptr,
-				&stdInput,
-				&stdOutput,
-				&stdError
-				) {}
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					&consoleBuf,
+					&consoleStrColors,
+					&consoleBgColors,
+					nullptr,
+					nullptr,
+					&stdInput,
+					&stdOutput,
+					&stdError
+					) {}
 			StartupInfo(
 				const TString& desktopName,
 				const TString& wndTitle,
@@ -626,19 +526,19 @@ namespace wawl {
 				const File& stdError
 				) :
 				StartupInfo(
-				&desktopName,
-				&wndTitle,
-				&wndPos,
-				&wndSize,
-				&consoleBuf,
-				&consoleStrColors,
-				&consoleBgColors,
-				&startupOptions,
-				&wndShowModes,
-				&stdInput,
-				&stdOutput,
-				&stdError
-				) {}
+					&desktopName,
+					&wndTitle,
+					&wndPos,
+					&wndSize,
+					&consoleBuf,
+					&consoleStrColors,
+					&consoleBgColors,
+					&startupOptions,
+					&wndShowModes,
+					&stdInput,
+					&stdOutput,
+					&stdError
+					) {}
 
 			//合成
 			StartupInfo& operator |= (const StartupInfo& si) {
@@ -693,7 +593,7 @@ namespace wawl {
 
 				suInfo_.dwFlags |= si.get().dwFlags;
 			}
-			
+
 			//内部の値を取得
 			auto& get() {
 				return suInfo_;
@@ -720,39 +620,39 @@ namespace wawl {
 		class ProcInfo {
 		public:
 			ProcInfo() {
-				procInfo_->dwProcessId = 0;
-				procInfo_->dwThreadId = 0;
-				procInfo_->hProcess = nullptr;
-				procInfo_->hThread = nullptr;
+				procInfo_.dwProcessId = 0;
+				procInfo_.dwThreadId = 0;
+				procInfo_.hProcess = nullptr;
+				procInfo_.hThread = nullptr;
 			}
 			ProcInfo(const ProcInfo&) = default;
 			ProcInfo(ProcInfo&&) = default;
 			ProcInfo& operator = (const ProcInfo&) = default;
 			ProcInfo& operator = (ProcInfo&&) = default;
 
+			ProcInfo(const ::PROCESS_INFORMATION& pi) {
+				procInfo_.dwProcessId = pi.dwProcessId;
+				procInfo_.dwThreadId = pi.dwThreadId;
+				procInfo_.hProcess = pi.hProcess;
+				procInfo_.hThread = pi.hThread;
+			}
+
 			auto& get() {
-				return *procInfo_;
-			}
-			const auto& get() const {
-				return *procInfo_;
-			}
-			auto& operator () () {
-				return *procInfo_;
-			}
-			const auto& operator () () const {
-				return *procInfo_;
-			}
-			//shared_ptrを返す
-			auto& getPtr() {
 				return procInfo_;
 			}
-			const auto& getPtr() const{
+			const auto& get() const {
+				return procInfo_;
+			}
+			auto& operator () () {
+				return procInfo_;
+			}
+			const auto& operator () () const {
 				return procInfo_;
 			}
 			
 		private:
-			std::shared_ptr<::PROCESS_INFORMATION> procInfo_ = std::make_shared<::PROCESS_INFORMATION>();
-			
+			::PROCESS_INFORMATION procInfo_;
+
 		};
 
 		//プロセス生成規定
@@ -805,7 +705,7 @@ namespace wawl {
 				if (startupInfo != nullptr)
 					myStartupInfo_ = std::make_shared<StartupInfo>(*startupInfo);
 
-				::PROCESS_INFORMATION* tmpProcInfo = new ::PROCESS_INFORMATION();
+				::PROCESS_INFORMATION tmpProcInfo;
 
 				if (
 					::CreateProcess(
@@ -818,19 +718,19 @@ namespace wawl {
 						(envVars == nullptr ? nullptr : reinterpret_cast<void*>(const_cast<TChar*>(envVars->c_str()))),
 						(currentDir == nullptr ? nullptr : currentDir->c_str()),
 						(startupInfo == nullptr ? nullptr : &myStartupInfo_->get()),
-						tmpProcInfo
+						&tmpProcInfo
 						) == 0
 					)
-					delete tmpProcInfo,
-					throw std::runtime_error("Failed to CreateProcess.");
+					throw std::runtime_error("Failed to CreateProcess.\nError Code: " + std::to_string(::GetLastError()));
 
-				procInfo_.getPtr() = std::shared_ptr<::PROCESS_INFORMATION>{
-					tmpProcInfo,
-					[](::PROCESS_INFORMATION* pi) {
-					if (pi != nullptr)
-						::CloseHandle(pi->hProcess),
-						::CloseHandle(pi->hThread),
+				procInfo_ = std::shared_ptr<ProcInfo>{
+					&ProcInfo(tmpProcInfo),
+					[](ProcInfo* pi) {
+					if (pi != nullptr) {
+						::CloseHandle(pi->get().hProcess);
+						::CloseHandle(pi->get().hThread);
 						delete pi;
+						}
 				} };
 			}
 			Process(
@@ -907,49 +807,153 @@ namespace wawl {
 
 		private:
 			//プロセス状況
-			ProcInfo procInfo_;
+			std::shared_ptr<ProcInfo> procInfo_;
 			//一部引数の保存
 			std::shared_ptr<SecurityAttrib> myProcAttrib_ = nullptr, myThreadAttrib_ = nullptr;
 			std::shared_ptr<StartupInfo> myStartupInfo_ = nullptr;
-			
+
+		};
+
+		//ファイルタイム
+		class FileTime {
+		public:
+			FileTime() = default;
+			FileTime(const FileTime&) = default;
+
+			void set(const FILETIME& fileTime) {
+				SYSTEMTIME systemTime;
+				FileTimeToSystemTime(&fileTime, &systemTime);
+				year_ = systemTime.wYear;
+				month_ = systemTime.wMonth;
+				day_ = systemTime.wDay;
+				dayOfWeek_ = systemTime.wDayOfWeek;
+				hour_ = systemTime.wHour;
+				minute_ = systemTime.wMinute;
+				second_ = systemTime.wSecond;
+				milliSecond_ = systemTime.wMilliseconds;
+				week_ = static_cast<Week>(systemTime.wDayOfWeek);
+			}
+
+			::FILETIME operator()() {
+				return Entity;
+			}
+
+			Word get(const TString& value) {
+
+				if (value == _T("year"))
+					return year_;
+				if (value == _T("month"))
+					return month_;
+				if (value == _T("day"))
+					return day_;
+				if (value == _T("dayofweek"))
+					return dayOfWeek_;
+				if (value == _T("hour"))
+					return hour_;
+				if (value == _T("minute"))
+					return minute_;
+				if (value == _T("second"))
+					return second_;
+				if (value == _T("millisecond"))
+					return milliSecond_;
+				if (value == _T("week"))
+					return week_;
+			}
+
+		private:
+			::FILETIME Entity;
+			Word year_, month_, day_, dayOfWeek_, hour_, minute_, second_, milliSecond_;
+			enum Week : Word {
+				Sunday,
+				Monday,
+				TuesDay,
+				WednesDay,
+				ThursDay,
+				FriDay,
+				SaturDay
+			} week_;
+		};
+
+		//INIファイル
+		class IniFile {
+		private:
+			TString fileName_;
+
+		public:
+			IniFile() = default;
+			IniFile(const IniFile&) = default;
+
+			IniFile(const TString& fileName) {
+				fileName_ = fileName;
+
+				std::ifstream ifs(fileName);
+				if (ifs.fail()) {
+					std::ofstream ofs(fileName);
+					ofs.close();
+				}
+			}
+
+			void open(const TString& fileName) {
+				fileName_ = fileName;
+
+				std::ifstream ifs(fileName);
+				if (ifs.fail()) {
+					std::ofstream ofs(fileName);
+					ofs.close();
+				}
+			}
+
+			TString readData(const TString& sectionName, const TString& keyName) {
+				TCHAR *ret;
+				::GetPrivateProfileString(sectionName.c_str(), keyName.c_str(), L"", ret, sizeof(ret) / sizeof(TChar), fileName_.c_str());
+				return ret;
+			}
+
+			void writeData(const TString& sectionName, const TString& data) {
+				::WritePrivateProfileSection(sectionName.c_str(), data.c_str(), fileName_.c_str());
+			}
+			void writeData(const TString& sectionName, const TString& keyName, const TString& data) {
+
+				::WritePrivateProfileString(sectionName.c_str(), keyName.c_str(), data.c_str(), fileName_.c_str());
+			}
+
 		};
 
 		class Dll {
 		public:
 			Dll(TString fileName) {
-				hmodule_ = ::LoadLibrary(fileName.c_str());
+				dll_ = ::LoadLibrary(fileName.c_str());
 			}
 			~Dll() {
-				::FreeLibrary(hmodule_);
+				::FreeLibrary(dll_);
 			}
 
 			auto& get() {
-				return hmodule_;
+				return dll_;
 			}
-			const auto& get() const{
-				return hmodule_;
+			const auto& get() const {
+				return dll_;
 			}
 			auto& operator()() {
-				return hmodule_;
+				return dll_;
 			}
 			const auto& operator()() const {
-				return hmodule_;
+				return dll_;
 			}
 
-			FARPROC getFunction(TString name) {
-				return ::GetProcAddress(hmodule_, (LPCSTR)name.c_str());
+			FARPROC getFunc(const AString& name) {
+				return ::GetProcAddress(dll_, name.c_str());
 			}
 
 		private:
-			::HMODULE hmodule_;
+			::HMODULE dll_;
 		};
 
-		
-
-
 	} //::wawl::fs
-	  //Registry testcode
+
+	//Registry testcode
 	namespace reg {
+
 		enum class RegistryOption {
 			BackupRestore = REG_OPTION_BACKUP_RESTORE,
 			CreateLink = REG_OPTION_CREATE_LINK,
@@ -960,7 +964,7 @@ namespace wawl {
 		};
 		using UnifyRegistryOption = _impl_UnifyEnum<RegistryOption>;
 
-		enum class RegistryKeyOption {
+		enum class RegistryKeyOption : unsigned int {
 			AllAccess = KEY_ALL_ACCESS,
 			CreateLink = KEY_CREATE_LINK,
 			CreateSubKey = KEY_CREATE_SUB_KEY,
@@ -996,15 +1000,15 @@ namespace wawl {
 			}
 			RegistryKey(HKEY currentKey, const TString& name, const RegistryOption& regOp, const RegistryKeyOption& keyOp, const fs::SecurityAttrib& secAtt) {
 				DWORD DisPosition;
-				::RegCreateKeyEx(currentKey, name.c_str(), NULL, L"", static_cast<UINT>(regOp), static_cast<UINT>(keyOp), (LPSECURITY_ATTRIBUTES)&secAtt.get(), &hkey_, &DisPosition);
+				::RegCreateKeyEx(currentKey, name.c_str(), 0, L"", static_cast<unsigned int>(regOp), static_cast<unsigned int>(keyOp), (LPSECURITY_ATTRIBUTES)&secAtt.get(), &hkey_, &DisPosition);
 			}
 			~RegistryKey() {
 				RegCloseKey(hkey_);
 			}
-			void setValue(const TString& name,const TString& value) {
+			void setValue(const TString& name, const TString& value) {
 				::RegSetValueEx(hkey_, name.c_str(), NULL, static_cast<UINT>(RegistryType::String), (const Byte*)value.c_str(), value.length()*sizeof(TChar));
 			}
-			void setValue(const TString& name,const Dword& value) {
+			void setValue(const TString& name, const Dword& value) {
 				::RegSetValueEx(hkey_, name.c_str(), NULL, static_cast<UINT>(RegistryType::DWord), (const Byte*)&value, sizeof(Dword));
 			}
 			void setValue(const TString& name, const Qword& value) {
@@ -1016,7 +1020,7 @@ namespace wawl {
 				return data;
 			}
 			void deleteValue(const TString& name) {
-				RegDeleteValue(hkey_, name.c_str());
+				RegDeleteValue(hkey_, name_.c_str());
 			}
 			RegistryKey getKey(const TString& name) {
 				::HKEY retHKey;
@@ -1034,11 +1038,11 @@ namespace wawl {
 				Dword numberOfSubKey;
 				Dword numberOfValues;
 				::RegQueryInfoKey(hkey_, (LPWSTR)name_.c_str(), NULL, NULL, &numberOfSubKey, NULL, NULL, &numberOfValues, NULL, NULL, NULL, &fileTime_());
-				
+
 
 			}
 
 		};
 
-	}
+	} //::wawl::reg
 } //::wawl

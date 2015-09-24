@@ -42,7 +42,7 @@ namespace wawl {
 		}
 
 #endif
-		
+
 		//キー入力関連
 #ifdef TRUE
 
@@ -226,12 +226,12 @@ namespace wawl {
 		}
 
 		//すべてのキー
-		using Allkey = std::array < bool, static_cast<std::size_t>(Key::_impl_EndEnum) + 1 > ;
+		using Allkey = std::array < bool, static_cast<std::size_t>(Key::_impl_EndEnum) + 1 >;
 		//すべてのキー入力状態を一括取得
 		Allkey getKeyboardState(bool doGetToggle = false) {
 			Byte keyboard[static_cast<std::size_t>(Key::_impl_EndEnum) + 1];
 			if (::GetKeyboardState(keyboard) == false)
-				throw std::runtime_error{ "Failed to GetKeyboardState." };
+				throw std::runtime_error{ "Failed to GetKeyboardState.\nError Code: " + std::to_string(::GetLastError()) };
 
 			Allkey ret;
 			for (std::size_t i = 0; i < ret.size(); ++i)
