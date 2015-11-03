@@ -804,7 +804,6 @@ namespace wawl {
 
 		};
 
-
 		//test code
 
 		//ファイルタイム
