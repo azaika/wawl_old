@@ -1,5 +1,8 @@
 #pragma once
 
+#define WAWL_ENABLE_BASETYPE
+#define WAWL_ENABLE
+
 //WinAPI
 #define NOMINMAX
 #include <Windows.h>
@@ -7,6 +10,7 @@
 #undef NOMINMAX
 //C++STL
 #include <string>
+#include <algorithm>
 
 namespace wawl {
 
@@ -41,6 +45,9 @@ namespace wawl {
 	//ポインタを格納する整数型
 	using IntPtr = ::INT_PTR;
 	using UintPtr = ::UINT_PTR;
+
+	//ハンドル
+	using Handle = ::HANDLE;
 
 #endif
 
@@ -77,6 +84,60 @@ namespace wawl {
 
 	using Position = Coordinates < int >;
 	using Rectangle = Position;
+
+	//言語コード
+	//TODO : 追加
+	enum class Lang : Dword {
+		UserDefault = LANG_USER_DEFAULT,
+		SysDefault = LANG_SYSTEM_DEFAULT,
+	};
+
+	class Error {
+	public:
+		Error() = default;
+		Error(const Error&) = default;
+		Error& operator = (const Error&) = default;
+
+		Error(Dword errorCode) :
+			code_(errorCode) {}
+		Error(Dword errorCode, const TString& funcName) :
+			code_(errorCode),
+			funcName_(funcName) {}
+
+		TString msg(Lang lang = Lang::UserDefault) const {
+			static TString buf;
+			buf.resize(512);
+
+			Dword bufSize = ::FormatMessage(
+				FORMAT_MESSAGE_FROM_SYSTEM,
+				0,
+				code_,
+				static_cast<Dword>(lang),
+				&buf[0],
+				static_cast<Dword>(buf.size() + 1),
+				nullptr
+				);
+
+			if (bufSize == 0)
+				::MessageBox(nullptr, L"Error", L"buf is 0", 0);
+
+			return buf.substr(
+				0,
+				bufSize
+				);
+		}
+		Dword getCode() const {
+			return code_;
+		}
+		const TString& getFuncName() const {
+			return funcName_;
+		}
+
+	private:
+		const Dword code_ = 0;
+		const TString funcName_;
+
+	};
 
 	//汎用enum組み合わせ型
 	template <typename EnumType>
@@ -124,8 +185,8 @@ namespace wawl {
 		_impl_UnifyEnum<ValueType>& operator |= (const ValueType& val) {
 			return compose(val);
 		}
-		_impl_UnifyEnum<ValueType>& operator | (const EnumType& val) const {
-			return _impl_UnifyEnum < ValueType > {vals_ | val};
+		_impl_UnifyEnum<ValueType>&& operator | (const EnumType& val) const {
+			return std::move(_impl_UnifyEnum<ValueType>(vals_ | val));
 		}
 
 		//含まれているかどうか

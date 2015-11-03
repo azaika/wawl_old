@@ -1,5 +1,7 @@
 #pragma once
 
+#define WAWL_ENABLE_SYSTEM
+
 //WinAPI
 #define NOMINMAX
 #include <Windows.h>

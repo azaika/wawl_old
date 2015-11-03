@@ -1,51 +1,52 @@
 #pragma once
 
+#define WAWL_ENABLE_UTILITY
+
 #include "BaseType.h"
 
 namespace wawl {
 	namespace util {
 
-		//String関連
-#ifdef TRUE
-
 		//AStringをWStringに変換
-		WString toWString(const AString& str) {
+		WString&& toWString(const AString& str) {
+			WString wstrBuf;
+
 			//変換後のサイズ
 			size_t wstrLen;
 			//サイズ取得&変換エラーチェック
 			if (mbstowcs_s(&wstrLen, nullptr, 0, str.c_str(), 0) != 0)
-				throw std::runtime_error{ "Falied to mbstowcs_s" };
+				return std::move(wstrBuf);
 
-			WString wstrBuf;
-			wstrBuf.reserve(wstrLen);
+			wstrBuf.resize(wstrLen);
 			if (mbstowcs_s(&wstrLen, &wstrBuf[0], wstrLen, str.c_str(), str.size()) != 0)
-				throw std::runtime_error{ "Falied to mbstowcs_s" };
+				wstrBuf.clear();
 
-			return wstrBuf;
+			return std::move(wstrBuf);
 		}
 		//WStringをAStringに変換
-		AString toAString(const WString& wstr) {
+		AString&& toAString(const WString& wstr) {
+			AString astrBuf;
+
 			//変換後のサイズ
 			size_t astrLen;
 			//サイズ取得&変換エラーチェック
 			if (wcstombs_s(&astrLen, nullptr, 0, wstr.c_str(), 0) != 0)
-				throw std::runtime_error{ "Falied to wcstombs_s" };
+				return std::move(astrBuf);
 
-			AString astrBuf;
-			astrBuf.reserve(astrLen);
+			astrBuf.resize(astrLen);
 			if (wcstombs_s(&astrLen, &astrBuf[0], astrLen, wstr.c_str(), wstr.size()) != 0)
-				throw std::runtime_error{ "Falied to wcstombs_s" };
+				astrBuf.clear();
 
-			return astrBuf;
+			return std::move(astrBuf);
 		}
 
 #ifdef UNICODE
 
-		inline TString toTString(const WString& str) {
-			return TString{ str };
+		inline TString&& toTString(const WString& str) {
+			return std::move(TString(str));
 		}
-		inline TString toTString(const AString& str) {
-			return toWString(str);
+		inline TString&& toTString(const AString& str) {
+			return std::move(toWString(str));
 		}
 		template<typename T>
 		inline TString valToTStr(const T& val) {
@@ -67,16 +68,11 @@ namespace wawl {
 
 #endif //UNICODE
 
-#endif //TRUE
-
-#ifdef TRUE
-
+		//enumまたはenum classの内部の値を取得
 		template <typename EnumType>
 		inline constexpr auto unpackEnum(const EnumType& val) {
 			return static_cast<typename std::underlying_type<EnumType>::type>(val);
 		}
-
-#endif //TRUE
 
 	} //::wawl::util
 } //::wawl

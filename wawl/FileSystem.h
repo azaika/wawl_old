@@ -1,5 +1,7 @@
 #pragma once
 
+#define WAWL_ENABLE_FILESYSTEM
+
 //wawl Header
 #include "BaseType.h"
 //C++ STL
@@ -225,7 +227,7 @@ namespace wawl {
 				);
 
 				if (file_.get() == INVALID_HANDLE_VALUE)
-					throw std::runtime_error{ "Faild to CreateFile." };
+					throw Error(::GetLastError());
 			}
 			File(
 				const TString& fileName,
@@ -617,41 +619,26 @@ namespace wawl {
 		};
 
 		//プロセス情報
-		class ProcInfo {
-		public:
-			ProcInfo() {
-				procInfo_.dwProcessId = 0;
-				procInfo_.dwThreadId = 0;
-				procInfo_.hProcess = nullptr;
-				procInfo_.hThread = nullptr;
-			}
+		struct ProcInfo {
+			Handle procHandle = 0, threadHandle = 0;
+			Dword procId = 0, threadId = 0;
+
+			ProcInfo() = default;
 			ProcInfo(const ProcInfo&) = default;
 			ProcInfo(ProcInfo&&) = default;
 			ProcInfo& operator = (const ProcInfo&) = default;
 			ProcInfo& operator = (ProcInfo&&) = default;
 
 			ProcInfo(const ::PROCESS_INFORMATION& pi) {
-				procInfo_.dwProcessId = pi.dwProcessId;
-				procInfo_.dwThreadId = pi.dwThreadId;
-				procInfo_.hProcess = pi.hProcess;
-				procInfo_.hThread = pi.hThread;
+				procId = pi.dwProcessId;
+				threadId = pi.dwThreadId;
+				procHandle = pi.hProcess;
+				threadHandle = pi.hThread;
 			}
 
-			auto& get() {
-				return procInfo_;
+			explicit operator ::PROCESS_INFORMATION() {
+				return *reinterpret_cast<PROCESS_INFORMATION*>(this);
 			}
-			const auto& get() const {
-				return procInfo_;
-			}
-			auto& operator () () {
-				return procInfo_;
-			}
-			const auto& operator () () const {
-				return procInfo_;
-			}
-			
-		private:
-			::PROCESS_INFORMATION procInfo_;
 
 		};
 
@@ -687,52 +674,6 @@ namespace wawl {
 			Process(Process&&) = default;
 			Process& operator = (Process&&) = default;
 
-			Process(
-				const TString* appName,
-				const TString* cmdLineArgs,
-				const SecurityAttrib* procAttrib,
-				const SecurityAttrib* threadAttrib,
-				bool doInheritHandle,
-				const UnifyProcCreateProv* createProv,
-				const TString* envVars,
-				const TString* currentDir,
-				const StartupInfo* startupInfo
-				) {
-				if (procAttrib != nullptr)
-					myProcAttrib_ = std::make_shared<SecurityAttrib>(*procAttrib);
-				if (threadAttrib != nullptr)
-					myThreadAttrib_ = std::make_shared<SecurityAttrib>(*threadAttrib);
-				if (startupInfo != nullptr)
-					myStartupInfo_ = std::make_shared<StartupInfo>(*startupInfo);
-
-				::PROCESS_INFORMATION tmpProcInfo;
-
-				if (
-					::CreateProcess(
-						(appName == nullptr ? nullptr : appName->c_str()),
-						(cmdLineArgs == nullptr ? nullptr : const_cast<TChar*>(cmdLineArgs->c_str())),
-						(procAttrib == nullptr ? nullptr : &myProcAttrib_->get()),
-						(threadAttrib == nullptr ? nullptr : &myThreadAttrib_->get()),
-						doInheritHandle,
-						(createProv == nullptr ? NORMAL_PRIORITY_CLASS : createProv->get()),
-						(envVars == nullptr ? nullptr : reinterpret_cast<void*>(const_cast<TChar*>(envVars->c_str()))),
-						(currentDir == nullptr ? nullptr : currentDir->c_str()),
-						(startupInfo == nullptr ? nullptr : &myStartupInfo_->get()),
-						&tmpProcInfo
-						) == 0
-					)
-					throw std::runtime_error("Failed to CreateProcess.\nError Code: " + std::to_string(::GetLastError()));
-
-				procInfo_ = std::shared_ptr<ProcInfo>{
-					&ProcInfo(tmpProcInfo),
-					[](ProcInfo* pi) {
-					if (pi != nullptr) {
-						::CloseHandle(pi->get().hProcess);
-						::CloseHandle(pi->get().hThread);
-						delete pi;
-						}
-				} };
-			}
 			Process(
 				const TString& cmdLine,
 				const StartupInfo& startupInfo
@@ -812,7 +753,59 @@ namespace wawl {
 			std::shared_ptr<SecurityAttrib> myProcAttrib_ = nullptr, myThreadAttrib_ = nullptr;
 			std::shared_ptr<StartupInfo> myStartupInfo_ = nullptr;
 
+			//根源コンストラクタ
+			Process(
+				const TString* appName,
+				const TString* cmdLineArgs,
+				const SecurityAttrib* procAttrib,
+				const SecurityAttrib* threadAttrib,
+				bool doInheritHandle,
+				const UnifyProcCreateProv* createProv,
+				const TString* envVars,
+				const TString* currentDir,
+				const StartupInfo* startupInfo
+				) {
+				if (procAttrib != nullptr)
+					myProcAttrib_ = std::make_shared<SecurityAttrib>(*procAttrib);
+				if (threadAttrib != nullptr)
+					myThreadAttrib_ = std::make_shared<SecurityAttrib>(*threadAttrib);
+				if (startupInfo != nullptr)
+					myStartupInfo_ = std::make_shared<StartupInfo>(*startupInfo);
+
+				ProcInfo* tmpProcInfo = new ProcInfo();
+
+				if (
+					::CreateProcess(
+						(appName == nullptr ? nullptr : appName->c_str()),
+						(cmdLineArgs == nullptr ? nullptr : const_cast<TChar*>(cmdLineArgs->c_str())),
+						(procAttrib == nullptr ? nullptr : &myProcAttrib_->get()),
+						(threadAttrib == nullptr ? nullptr : &myThreadAttrib_->get()),
+						doInheritHandle,
+						(createProv == nullptr ? NORMAL_PRIORITY_CLASS : createProv->get()),
+						(envVars == nullptr ? nullptr : reinterpret_cast<void*>(const_cast<TChar*>(envVars->c_str()))),
+						(currentDir == nullptr ? nullptr : currentDir->c_str()),
+						(startupInfo == nullptr ? nullptr : &myStartupInfo_->get()),
+						&static_cast<::PROCESS_INFORMATION>(*tmpProcInfo)
+						) == 0
+					)
+					delete tmpProcInfo,
+					throw Error(::GetLastError());
+
+				procInfo_ = std::shared_ptr<ProcInfo>{
+					tmpProcInfo,
+					[](ProcInfo* pi) {
+					if (pi != nullptr) {
+						::CloseHandle(pi->procHandle);
+						::CloseHandle(pi->threadHandle);
+						delete pi;
+					}
+				} };
+			}
+
 		};
+
+
+		//test code
 
 		//ファイルタイム
 		class FileTime {
@@ -876,9 +869,6 @@ namespace wawl {
 
 		//INIファイル
 		class IniFile {
-		private:
-			TString fileName_;
-
 		public:
 			IniFile() = default;
 			IniFile(const IniFile&) = default;
@@ -903,31 +893,41 @@ namespace wawl {
 				}
 			}
 
-			TString readData(const TString& sectionName, const TString& keyName) {
+			TString read(const TString& sectionName, const TString& keyName) {
 				TCHAR *ret;
-				::GetPrivateProfileString(sectionName.c_str(), keyName.c_str(), L"", ret, sizeof(ret) / sizeof(TChar), fileName_.c_str());
+				::GetPrivateProfileString(
+					sectionName.c_str(),
+					keyName.c_str(),
+					L"",
+					ret,
+					sizeof(ret) / sizeof(TChar),
+					fileName_.c_str()
+					);
 				return ret;
 			}
 
-			void writeData(const TString& sectionName, const TString& data) {
+			void write(const TString& sectionName, const TString& data) {
 				::WritePrivateProfileSection(sectionName.c_str(), data.c_str(), fileName_.c_str());
 			}
-			void writeData(const TString& sectionName, const TString& keyName, const TString& data) {
-
+			void write(const TString& sectionName, const TString& keyName, const TString& data) {
 				::WritePrivateProfileString(sectionName.c_str(), keyName.c_str(), data.c_str(), fileName_.c_str());
 			}
+
+		private:
+			TString fileName_;
 
 		};
 
 		class Dll {
 		public:
-			Dll(TString fileName) {
+			Dll(const TString& fileName) {
 				dll_ = ::LoadLibrary(fileName.c_str());
 			}
 			~Dll() {
 				::FreeLibrary(dll_);
 			}
 
+			//getter
 			auto& get() {
 				return dll_;
 			}
@@ -948,6 +948,8 @@ namespace wawl {
 		private:
 			::HMODULE dll_;
 		};
+
+		//~test code
 
 	} //::wawl::fs
 
@@ -1006,7 +1008,14 @@ namespace wawl {
 				RegCloseKey(hkey_);
 			}
 			void setValue(const TString& name, const TString& value) {
-				::RegSetValueEx(hkey_, name.c_str(), NULL, static_cast<UINT>(RegistryType::String), (const Byte*)value.c_str(), value.length()*sizeof(TChar));
+				::RegSetValueEx(
+					hkey_,
+					name.c_str(),
+					0,
+					static_cast<UINT>(RegistryType::String),
+					reinterpret_cast<const Byte*>(value.c_str()),
+					static_cast<Dword>(value.size()*sizeof(TChar))
+					);
 			}
 			void setValue(const TString& name, const Dword& value) {
 				::RegSetValueEx(hkey_, name.c_str(), NULL, static_cast<UINT>(RegistryType::DWord), (const Byte*)&value, sizeof(Dword));
@@ -1045,4 +1054,5 @@ namespace wawl {
 		};
 
 	} //::wawl::reg
+
 } //::wawl
