@@ -8,8 +8,18 @@
 #include "Using.h"
 
 void wawlMain() {
-	//utilのテスト
-	constexpr auto a = unpackEnum(fs::AccessDesc::All);
+	wnd::RootWindow window;
+	try {
+		window = wnd::RootWindow(
+			L"Kitty",
+			wnd::Prop({ wnd::PropOption::HRedraw, wnd::PropOption::VRedraw }),
+			{ 640, 480 },
+			wnd::Style::SysMenu
+			);
+	}
+	catch (Error& error) {
+		mb::show(L"Error", error.msg(), mb::Button::OK);
+	}
 
 	while (Sleep(1), true) {
 		//終了処理
@@ -27,7 +37,7 @@ void wawlMain() {
 		}
 		//マウス操作のテスト
 		else if (kb::getState(KeyCode::One))
-			mouse::setPos({ 100, 100 });
+			mc::setPos({ 100, 100 });
 		//他アプリケーション起動のテスト
 		else if (kb::getState(KeyCode::Two)) {
 			try {
@@ -36,6 +46,10 @@ void wawlMain() {
 			catch (Error& error) {
 				mb::show(L"Error", error.msg(), mb::Button::OK);
 			}
+		}
+		else if (kb::getState(KeyCode::W)) {
+			if(!window.show())
+				mb::show(L"Error", L"Failed to ShowWindow.", mb::Button::OK);
 		}
 
 	}

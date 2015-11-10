@@ -8,45 +8,45 @@ namespace wawl {
 	namespace util {
 
 		//AStringをWStringに変換
-		WString&& toWString(const AString& str) {
-			WString wstrBuf;
-
+		WString toWString(const AString& str) {
 			//変換後のサイズ
 			size_t wstrLen;
+
 			//サイズ取得&変換エラーチェック
 			if (mbstowcs_s(&wstrLen, nullptr, 0, str.c_str(), 0) != 0)
-				return std::move(wstrBuf);
+				return WString();
 
-			wstrBuf.resize(wstrLen);
+			//変換
+			WString wstrBuf(wstrLen, L'\0');
 			if (mbstowcs_s(&wstrLen, &wstrBuf[0], wstrLen, str.c_str(), str.size()) != 0)
 				wstrBuf.clear();
 
-			return std::move(wstrBuf);
+			return wstrBuf;
 		}
 		//WStringをAStringに変換
-		AString&& toAString(const WString& wstr) {
-			AString astrBuf;
-
+		AString toAString(const WString& wstr) {
 			//変換後のサイズ
 			size_t astrLen;
+
 			//サイズ取得&変換エラーチェック
 			if (wcstombs_s(&astrLen, nullptr, 0, wstr.c_str(), 0) != 0)
-				return std::move(astrBuf);
+				return AString();
 
-			astrBuf.resize(astrLen);
+			//変換
+			AString astrBuf(astrLen, '\0');
 			if (wcstombs_s(&astrLen, &astrBuf[0], astrLen, wstr.c_str(), wstr.size()) != 0)
 				astrBuf.clear();
 
-			return std::move(astrBuf);
+			return astrBuf;
 		}
 
 #ifdef UNICODE
 
-		inline TString&& toTString(const WString& str) {
-			return std::move(TString(str));
+		inline TString toTString(const WString& str) {
+			return TString(str);
 		}
-		inline TString&& toTString(const AString& str) {
-			return std::move(toWString(str));
+		inline TString toTString(const AString& str) {
+			return toWString(str);
 		}
 		template<typename T>
 		inline TString valToTStr(const T& val) {
@@ -56,7 +56,7 @@ namespace wawl {
 #else //UNICODE
 
 		inline TString toTString(const AString& str) {
-			return TString{ str };
+			return TString(str);
 		}
 		inline TString toTString(const WString& str) {
 			return toAString(str);

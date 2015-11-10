@@ -10,6 +10,7 @@
 #ifdef WAWL_ENABLE_INPUT
 	using namespace ::wawl::input;
 	using KeyCode = ::wawl::input::kb::Code;
+	namespace mc = ::wawl::input::mouse;
 #endif
 
 #ifdef WAWL_ENABLE_WINDOW

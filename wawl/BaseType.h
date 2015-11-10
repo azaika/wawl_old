@@ -154,11 +154,11 @@ namespace wawl {
 
 		constexpr _impl_UnifyEnum(const EnumType& val) :
 			vals_(static_cast<ValueType>(val)) {}
-		constexpr _impl_UnifyEnum(const std::initializer_list<ValueType>& valList) {
+		_impl_UnifyEnum(const std::initializer_list<ValueType>& valList) {
 			for (auto&& val : valList)
 				vals_ |= val;
 		}
-		constexpr _impl_UnifyEnum(const std::initializer_list<EnumType>& valList) {
+		_impl_UnifyEnum(const std::initializer_list<EnumType>& valList) {
 			for (auto&& val : valList)
 				vals_ |= static_cast<ValueType>(val);
 		}
@@ -214,7 +214,7 @@ namespace wawl {
 	//WinAPI構造体のラップ
 #ifdef TRUE
 
-	//test code
+	/* test code
 	enum class WndShowmode_ : Dword {
 		Hide = 1 << 0,
 		Show = 1 << 1,
@@ -265,7 +265,7 @@ namespace wawl {
 		else if (sw.has(WndShowmode_::ForceMin))
 			return SW_FORCEMINIMIZE;
 	}
-	//~test code
+	~test code*/
 
 	//Window表示形式
 	enum class WndShowMode : Word {

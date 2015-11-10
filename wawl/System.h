@@ -8,6 +8,8 @@
 #include <tchar.h>
 #undef NOMINMAX
 
+#pragma comment(lib, "winmm.lib")
+
 //wawl based Header
 #include "BaseType.h"
 
@@ -41,10 +43,17 @@ namespace wawl {
 			Shutdown = EWX_SHUTDOWN
 		};
 		inline bool Exit(const ExitMode mode) {
-			return ::ExitWindowsEx(static_cast<unsigned int>(mode), 0) != 0;
+			return ::ExitWindowsEx(
+				static_cast<unsigned int>(mode),
+				0
+				) != 0;
 		}
 		inline bool Exit(const ExitMode mode, bool doWaitHang) {
-			return ::ExitWindowsEx(static_cast<unsigned int>(mode) | (doWaitHang ? EWX_FORCEIFHUNG : EWX_FORCE), 0) != 0;
+			return ::ExitWindowsEx(
+				static_cast<unsigned int>(mode) |
+				(doWaitHang ? EWX_FORCEIFHUNG : EWX_FORCE),
+				0
+				) != 0;
 		}
 
 		inline bool StartShutdown(const TString& machineName, const TString& msg, Dword timeOut = 0, Bool isForce = false, Bool doRestart = false) {
@@ -69,34 +78,16 @@ namespace wawl {
 			void operator = (_impl_System&&) = delete;
 
 			//コマンドライン引数を取得
-			friend inline TString getCmdArgs() {
-				return cmdArgStr_;
-			}
+			friend const TString& getCmdArgs();
 
-			friend inline int getWndShowmode() {
-				return windowShowmode_;
-			}
+			friend int getWndShowmode();
 
 			//システムのタイマー分解能を変更。必ず終わったあとResetTimeResolution()を呼び出す
-			friend inline bool changeTimeRes(unsigned int res) {
-				return (
-					sysRes_ == 0 ?
-					sysRes_ = res, ::timeBeginPeriod(res) == TIMERR_NOERROR :
-					false
-					);
-			}
+			friend bool changeTimeRes(unsigned int res);
 			//システムのタイマー分解能を元に戻す
-			friend inline bool resetTimeRes() {
-				int tmpRes = sysRes_;
+			friend bool resetTimeRes();
 
-				return (
-					sysRes_ != 0 ?
-					sysRes_ = 0, ::timeEndPeriod(tmpRes) == TIMERR_NOERROR :
-					false
-					);
-			}
-
-			static void _impl_setWinMainArgs(const TString& cmdLine, int cmdShow) {
+			static void setWinMainArgs(const TString& cmdLine, int cmdShow) {
 				//初回呼び出しかどうか
 				static bool isFirst = true;
 
@@ -121,6 +112,29 @@ namespace wawl {
 		int _impl_System::windowShowmode_ = 0;
 		int _impl_System::sysRes_ = 0;
 
+		int getWndShowmode() {
+			return _impl_System::windowShowmode_;
+		}
+		const TString& getCmdArgs() {
+			return _impl_System::cmdArgStr_;
+		}
+		bool changeTimeRes(unsigned int res) {
+			return (
+				_impl_System::sysRes_ == 0
+				? _impl_System::sysRes_ = res, ::timeBeginPeriod(res) == TIMERR_NOERROR
+				: false
+				);
+		}
+		bool resetTimeRes() {
+			int tmpRes = _impl_System::sysRes_;
+
+			return (
+				_impl_System::sysRes_ != 0
+				? _impl_System::sysRes_ = 0, ::timeEndPeriod(tmpRes) == TIMERR_NOERROR
+				: false
+				);
+		}
+
 	} //::wawl::sys
 } //::wawl
 
@@ -132,7 +146,7 @@ int WINAPI _tWinMain(
 	) {
 	using namespace wawl;
 
-	sys::_impl_System::_impl_setWinMainArgs(cmdLine, cmdShow);
+	sys::_impl_System::setWinMainArgs(cmdLine, cmdShow);
 
 	wawlMain();
 
