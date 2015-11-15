@@ -14,7 +14,7 @@ void wawlMain() {
 			L"Kitty",
 			wnd::Prop({ wnd::PropOption::HRedraw, wnd::PropOption::VRedraw }),
 			{ 640, 480 },
-			wnd::Style::SysMenu
+			wnd::Style::Overlapped
 			);
 	}
 	catch (Error& error) {
@@ -40,12 +40,9 @@ void wawlMain() {
 			mc::setPos({ 100, 100 });
 		//他アプリケーション起動のテスト
 		else if (kb::getState(KeyCode::Two)) {
-			try {
-				fs::Process(L"notepad.exe", fs::StartupInfo{});
-			}
-			catch (Error& error) {
-				mb::show(L"Error", error.msg(), mb::Button::OK);
-			}
+			fs::Process proc(L"notepad.exe", fs::StartupInfo{});
+			if(!proc)
+				mb::show(L"Error", proc.getError().msg(), mb::Button::OK);
 		}
 		else if (kb::getState(KeyCode::W)) {
 			if(!window.show())

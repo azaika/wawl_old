@@ -496,35 +496,69 @@ namespace wawl {
 				posBuf->x = screenPos.x;
 				posBuf->y = screenPos.y;
 
-				if (!::ClientToScreen(hwnd_, posBuf))
+				if (!::ScreenToClient(hwnd_, posBuf))
 					throw Error(::GetLastError());
 
 				return Position(posBuf->x, posBuf->y);
 			}
 
+			::HWND get() const {
+				return hwnd_;
+			}
+
+			void clear() {
+				hwnd_ = 0;
+				msgProcs_.clear();
+			}
+
 		protected:
 			::HWND hwnd_ = nullptr;
 			//自身への参照を保持
-			static std::unordered_map<::HWND, std::shared_ptr<Window>> winRefs_;
+			static std::unordered_map<::HWND, Window*> winRefs_;
+			//CreateWindowExを呼んだクラス
+			static Window* creater_;
 			//メッセージプロシージャ
 			std::unordered_map<unsigned int, ProcType> msgProcs_;
 
 		};
-		std::unordered_map<::HWND, std::shared_ptr<Window>> Window::winRefs_;
+		std::unordered_map<::HWND, Window*> Window::winRefs_;
+		Window* Window::creater_ = nullptr;
 		::LRESULT CALLBACK _impl_MsgProc(::HWND hwnd, unsigned int msg, ::WPARAM wParam, ::LPARAM lParam) {
+			//生成された時にリストに登録
+			if (msg == WM_CREATE &&
+				Window::winRefs_.find(hwnd) == Window::winRefs_.end()) {
+				
+				Window::winRefs_.insert(std::make_pair(hwnd, Window::creater_));
+
+				return ::DefWindowProc(hwnd, msg, wParam, lParam);
+			}
+
+			//破棄されたら登録解除
+			if (msg == WM_DESTROY &&
+				Window::winRefs_.find(hwnd) != Window::winRefs_.end()) {
+				//ユーザー定義のDestroyを呼ぶ
+				auto& procs = Window::winRefs_[hwnd]->msgProcs_;
+				if (procs.find(WM_DESTROY) != procs.end())
+					procs[WM_DESTROY](wParam, lParam);
+
+				Window::winRefs_.erase(hwnd);
+
+				return ::DefWindowProc(hwnd, msg, wParam, lParam);
+			}
+
+			//存在しない場合エラー
 			if (Window::winRefs_.find(hwnd) == Window::winRefs_.end())
 				return 1;
-			else {
-				auto wnd = Window::winRefs_[hwnd];
 
-				auto it = wnd->msgProcs_.count(msg);
-				auto ite = wnd->msgProcs_.end();
+			auto& wnd = Window::winRefs_[hwnd];
 
-				if (wnd->msgProcs_.count(msg) == 0)
-					return ::DefWindowProc(hwnd, msg, wParam, lParam);
-				else
-					return wnd->msgProcs_[msg](wParam, lParam);
-			}
+			auto it = wnd->msgProcs_.find(1);
+			auto ite = wnd->msgProcs_.end();
+
+			if (wnd->msgProcs_.find(msg) == wnd->msgProcs_.end())
+				return ::DefWindowProc(hwnd, msg, wParam, lParam);
+			else
+				return wnd->msgProcs_[msg](wParam, lParam);
 
 			return 0;
 		}
@@ -532,6 +566,8 @@ namespace wawl {
 		class RootWindow : public Window {
 		public:
 			RootWindow() = default;
+			RootWindow(RootWindow&&) = default;
+			RootWindow& operator = (RootWindow&&) = default;
 
 			RootWindow(
 				const TString& titleName,
@@ -605,6 +641,7 @@ namespace wawl {
 				const UnifyExtStyle* extStyles,
 				const Menu* menu
 				) {
+				creater_ = static_cast<Window*>(this);
 				hwnd_ = CreateWindowEx(
 					(extStyles != nullptr ? extStyles->get() : 0),
 					prop.getName().c_str(),
@@ -620,13 +657,10 @@ namespace wawl {
 					nullptr
 					);
 
-				if (hwnd_ == nullptr)
-					throw Error(::GetLastError());
+				creater_ = nullptr;
 
-				if (::UpdateWindow(hwnd_) == 0)
+				if (hwnd_ == nullptr || ::UpdateWindow(hwnd_) == 0)
 					throw Error(::GetLastError());
-
-				winRefs_.insert(std::make_pair(hwnd_, std::shared_ptr<Window>(this)));
 			}
 
 		};

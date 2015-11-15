@@ -746,12 +746,26 @@ namespace wawl {
 					&startupInfo
 					) {}
 
+			bool fail() {
+				return procInfo_ == nullptr;
+			}
+			
+			explicit operator bool() {
+				return procInfo_ != nullptr;
+			}
+
+			const Error& getError() const {
+				return error_;
+			}
+
 		private:
 			//プロセス状況
-			std::shared_ptr<ProcInfo> procInfo_;
+			std::shared_ptr<ProcInfo> procInfo_ = nullptr;
 			//一部引数の保存
 			std::shared_ptr<SecurityAttrib> myProcAttrib_ = nullptr, myThreadAttrib_ = nullptr;
 			std::shared_ptr<StartupInfo> myStartupInfo_ = nullptr;
+			//エラーコード
+			Error error_ = Error(0);
 
 			//根源コンストラクタ
 			Process(
@@ -788,18 +802,19 @@ namespace wawl {
 						&static_cast<::PROCESS_INFORMATION>(*tmpProcInfo)
 						) == 0
 					)
-					delete tmpProcInfo,
-					throw Error(::GetLastError());
-
-				procInfo_ = std::shared_ptr<ProcInfo>{
-					tmpProcInfo,
-					[](ProcInfo* pi) {
-					if (pi != nullptr) {
-						::CloseHandle(pi->procHandle);
-						::CloseHandle(pi->threadHandle);
-						delete pi;
-					}
-				} };
+					delete tmpProcInfo, error_ = Error(::GetLastError());
+				else {
+					procInfo_ = std::shared_ptr<ProcInfo>(
+						tmpProcInfo,
+						[](ProcInfo* pi) {
+							if (pi != nullptr) {
+								::CloseHandle(pi->procHandle);
+								::CloseHandle(pi->threadHandle);
+								delete pi;
+							}
+						}
+					);
+				}
 			}
 
 		};

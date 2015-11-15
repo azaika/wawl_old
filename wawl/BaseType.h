@@ -134,8 +134,8 @@ namespace wawl {
 		}
 
 	private:
-		const Dword code_ = 0;
-		const TString funcName_;
+		Dword code_ = 0;
+		TString funcName_;
 
 	};
 
