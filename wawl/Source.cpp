@@ -44,10 +44,10 @@ void wawlMain() {
 			if(!proc)
 				mb::show(L"Error", proc.getError().msg(), mb::Button::OK);
 		}
-		else if (kb::getState(KeyCode::W)) {
-			if(!window.show())
-				mb::show(L"Error", L"Failed to ShowWindow.", mb::Button::OK);
-		}
+		else if (kb::getState(KeyCode::W))
+			window.show();
 
+		if (window.isAlive())
+			window.update();
 	}
 }

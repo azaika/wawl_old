@@ -474,11 +474,34 @@ namespace wawl {
 			// WindowÉvÉçÉVÅ[ÉWÉÉÇÃé¿ë‘
 			friend ::LRESULT CALLBACK _impl_MsgProc(::HWND hwnd, unsigned int msg, ::WPARAM wParam, ::LPARAM lParam);
 
+			bool isAlive() {
+				return hwnd_ != nullptr;
+			}
+
+			void update() {
+				MSG msg = {};
+				if (::PeekMessage(&msg, hwnd_, 0, 0, PM_REMOVE) != 0) {
+					::TranslateMessage(&msg);
+					::DispatchMessage(&msg);
+				}
+
+				if (isAlive() && ::UpdateWindow(hwnd_) == 0)
+					throw Error(::GetLastError());
+			}
+
 			bool show() {
-				return ::ShowWindow(hwnd_, sys::getWndShowmode()) == 0;
+				if (::ShowWindow(hwnd_, sys::getWndShowmode()) == 0)
+					return false;
+
+				::UpdateWindow(hwnd_);
+				return true;
 			}
 			bool show(ShowMode showMode) {
-				return ::ShowWindow(hwnd_, util::unpackEnum(showMode)) == 0;
+				if (::ShowWindow(hwnd_, util::unpackEnum(showMode)) == 0)
+					return false;
+
+				::UpdateWindow(hwnd_);
+				return true;
 			}
 
 			Position toScreenPos(const Position& clientPos) {
@@ -524,9 +547,8 @@ namespace wawl {
 		std::unordered_map<::HWND, Window*> Window::winRefs_;
 		Window* Window::creater_ = nullptr;
 		::LRESULT CALLBACK _impl_MsgProc(::HWND hwnd, unsigned int msg, ::WPARAM wParam, ::LPARAM lParam) {
-			//ê∂ê¨Ç≥ÇÍÇΩéûÇ…ÉäÉXÉgÇ…ìoò^
-			if (msg == WM_CREATE &&
-				Window::winRefs_.find(hwnd) == Window::winRefs_.end()) {
+			//ë∂ç›ÇµÇ»Ç¢èÍçáÉäÉXÉgÇ…ìoò^
+			if (Window::winRefs_.find(hwnd) == Window::winRefs_.end()) {
 				
 				Window::winRefs_.insert(std::make_pair(hwnd, Window::creater_));
 
@@ -534,27 +556,19 @@ namespace wawl {
 			}
 
 			//îjä¸Ç≥ÇÍÇΩÇÁìoò^âèú
-			if (msg == WM_DESTROY &&
-				Window::winRefs_.find(hwnd) != Window::winRefs_.end()) {
+			if (msg == WM_DESTROY) {
 				//ÉÜÅ[ÉUÅ[íËã`ÇÃDestroyÇåƒÇ‘
-				auto& procs = Window::winRefs_[hwnd]->msgProcs_;
+				const auto& procs = Window::winRefs_[hwnd]->msgProcs_;
 				if (procs.find(WM_DESTROY) != procs.end())
-					procs[WM_DESTROY](wParam, lParam);
+					procs.at(WM_DESTROY)(wParam, lParam);
 
+				Window::winRefs_[hwnd]->hwnd_ = nullptr;
 				Window::winRefs_.erase(hwnd);
 
 				return ::DefWindowProc(hwnd, msg, wParam, lParam);
 			}
 
-			//ë∂ç›ÇµÇ»Ç¢èÍçáÉGÉâÅ[
-			if (Window::winRefs_.find(hwnd) == Window::winRefs_.end())
-				return 1;
-
 			auto& wnd = Window::winRefs_[hwnd];
-
-			auto it = wnd->msgProcs_.find(1);
-			auto ite = wnd->msgProcs_.end();
-
 			if (wnd->msgProcs_.find(msg) == wnd->msgProcs_.end())
 				return ::DefWindowProc(hwnd, msg, wParam, lParam);
 			else
@@ -566,8 +580,20 @@ namespace wawl {
 		class RootWindow : public Window {
 		public:
 			RootWindow() = default;
-			RootWindow(RootWindow&&) = default;
-			RootWindow& operator = (RootWindow&&) = default;
+			RootWindow(RootWindow&& rw) {
+				hwnd_ = std::move(rw.hwnd_);
+				msgProcs_ = std::move(rw.msgProcs_);
+
+				winRefs_[rw.hwnd_] = static_cast<Window*>(this);
+			}
+			RootWindow& operator = (RootWindow&& rw) {
+				hwnd_ = std::move(rw.hwnd_);
+				msgProcs_ = std::move(rw.msgProcs_);
+
+				winRefs_[rw.hwnd_] = static_cast<Window*>(this);
+
+				return *this;
+			}
 
 			RootWindow(
 				const TString& titleName,
@@ -619,6 +645,10 @@ namespace wawl {
 					&extStyles,
 					&menu
 					) {}
+
+			bool open() {
+
+			}
 
 			RootWindow& addMsgProc(const Msg msg, const ProcType& proc) {
 				msgProcs_.insert(std::make_pair(util::unpackEnum(msg), proc));
