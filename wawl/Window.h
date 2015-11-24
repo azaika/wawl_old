@@ -471,6 +471,8 @@ namespace wawl {
 		public:
 			using ProcType = std::function<int(UintPtr, IntPtr)>;
 
+			Window& operator = (const Window&) = delete;
+
 			// Windowプロシージャの実態
 			friend ::LRESULT CALLBACK _impl_MsgProc(::HWND hwnd, unsigned int msg, ::WPARAM wParam, ::LPARAM lParam);
 
@@ -502,6 +504,49 @@ namespace wawl {
 
 				::UpdateWindow(hwnd_);
 				return true;
+			}
+			
+			bool resize(
+				const Rectangle& nowSize,
+				bool clientBase = true
+				) {
+				RECT nowWnd, nowClient;
+				Rectangle newRect;
+				
+				::GetWindowRect(hwnd_, &nowWnd);
+				::GetClientRect(hwnd_, &nowClient);
+
+				if (clientBase) {
+					newRect.x = (nowWnd.right - nowWnd.left) - (nowClient.right - nowClient.left) + nowSize.x;
+					newRect.y = (nowWnd.bottom - nowWnd.top) - (nowClient.bottom - nowClient.top) + nowSize.y;
+				}
+				else {
+					newRect.x = nowSize.x;
+					newRect.y = nowSize.y;
+				}
+
+				return ::SetWindowPos(
+					hwnd_,
+					0, 0, 0,
+					newRect.x,
+					newRect.y,
+					SWP_NOMOVE | SWP_NOZORDER
+					) != 0;
+			}
+
+			bool move(
+				const Position& newPos,
+				bool doRedraw = true
+				) {
+				RECT rc;
+				GetWindowRect(hwnd_, &rc);
+				return MoveWindow(
+					hwnd_,
+					newPos.x, newPos.y,
+					rc.right - rc.left,
+					rc.bottom - rc.top,
+					doRedraw
+					) != 0;
 			}
 
 			Position toScreenPos(const Position& clientPos) {
@@ -595,6 +640,9 @@ namespace wawl {
 				return *this;
 			}
 
+			RootWindow(const RootWindow&) = delete;
+			RootWindow& operator = (const RootWindow&) = delete;
+
 			RootWindow(
 				const TString& titleName,
 				const Prop& prop,
@@ -645,10 +693,6 @@ namespace wawl {
 					&extStyles,
 					&menu
 					) {}
-
-			bool open() {
-
-			}
 
 			RootWindow& addMsgProc(const Msg msg, const ProcType& proc) {
 				msgProcs_.insert(std::make_pair(util::unpackEnum(msg), proc));
@@ -708,7 +752,6 @@ namespace wawl {
 				YesNo = MB_YESNO,
 				YesNoCancel = MB_YESNOCANCEL
 			};
-			using UnifyButton = _impl_UnifyEnum<Button>;
 			//showMessageで表示するアイコン
 			enum class Icon : unsigned int {
 				Warning = MB_ICONWARNING,
@@ -748,13 +791,13 @@ namespace wawl {
 				Yes = IDYES
 			};
 
-			Result show(const TString& title, const TString& text, const UnifyButton& button) {
+			Result show(const TString& title, const TString& text, Button button) {
 				return static_cast<Result>(
 					::MessageBox(
 						nullptr,
 						text.c_str(),
 						title.c_str(),
-						button.get()
+						util::unpackEnum(button)
 						)
 					);
 			}

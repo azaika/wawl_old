@@ -11,7 +11,7 @@ void wawlMain() {
 	wnd::RootWindow window;
 	try {
 		window = wnd::RootWindow(
-			L"Kitty",
+			L"Kitty on your lap",
 			wnd::Prop({ wnd::PropOption::HRedraw, wnd::PropOption::VRedraw }),
 			{ 640, 480 },
 			wnd::Style::Overlapped
@@ -24,8 +24,8 @@ void wawlMain() {
 	while (Sleep(1), true) {
 		//終了処理
 		if (kb::getState(KeyCode::Escape)) {
-			mb::show(L"Application end", L"Good bye", mb::Button::OK);
-			break;
+			if (mb::show(L"Application end", L"Do you shutdown the application?", mb::Button::YesNo) == mb::Result::Yes)
+				break;
 		}
 		//キーインプットのテスト
 		else if (kb::getState(KeyCode::X))
@@ -47,7 +47,14 @@ void wawlMain() {
 		else if (kb::getState(KeyCode::W))
 			window.show();
 
-		if (window.isAlive())
+		if (window.isAlive()) {
+			if (kb::getState(KeyCode::R))
+				window.resize({ 200,200 });
+			else if (kb::getState(KeyCode::M))
+				window.move({ 500, 500 });
+
 			window.update();
+		}
+			
 	}
 }
