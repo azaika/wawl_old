@@ -7,32 +7,32 @@
 namespace wawl {
 	namespace util {
 
-		//AString‚ğWString‚É•ÏŠ·
+		//AStringã‚’WStringã«å¤‰æ›
 		WString toWString(const AString& str) {
-			//•ÏŠ·Œã‚ÌƒTƒCƒY
+			//å¤‰æ›å¾Œã®ã‚µã‚¤ã‚º
 			size_t wstrLen;
 
-			//ƒTƒCƒYæ“¾&•ÏŠ·ƒGƒ‰[ƒ`ƒFƒbƒN
+			//ã‚µã‚¤ã‚ºå–å¾—&å¤‰æ›ã‚¨ãƒ©ãƒ¼ãƒã‚§ãƒƒã‚¯
 			if (mbstowcs_s(&wstrLen, nullptr, 0, str.c_str(), 0) != 0)
 				return WString();
 
-			//•ÏŠ·
+			//å¤‰æ›
 			WString wstrBuf(wstrLen, L'\0');
 			if (mbstowcs_s(&wstrLen, &wstrBuf[0], wstrLen, str.c_str(), str.size()) != 0)
 				wstrBuf.clear();
 
 			return wstrBuf;
 		}
-		//WString‚ğAString‚É•ÏŠ·
+		//WStringã‚’AStringã«å¤‰æ›
 		AString toAString(const WString& wstr) {
-			//•ÏŠ·Œã‚ÌƒTƒCƒY
+			//å¤‰æ›å¾Œã®ã‚µã‚¤ã‚º
 			size_t astrLen;
 
-			//ƒTƒCƒYæ“¾&•ÏŠ·ƒGƒ‰[ƒ`ƒFƒbƒN
+			//ã‚µã‚¤ã‚ºå–å¾—&å¤‰æ›ã‚¨ãƒ©ãƒ¼ãƒã‚§ãƒƒã‚¯
 			if (wcstombs_s(&astrLen, nullptr, 0, wstr.c_str(), 0) != 0)
 				return AString();
 
-			//•ÏŠ·
+			//å¤‰æ›
 			AString astrBuf(astrLen, '\0');
 			if (wcstombs_s(&astrLen, &astrBuf[0], astrLen, wstr.c_str(), wstr.size()) != 0)
 				astrBuf.clear();
@@ -68,7 +68,7 @@ namespace wawl {
 
 #endif //UNICODE
 
-		//enum‚Ü‚½‚Íenum class‚Ì“à•”‚Ì’l‚ğæ“¾
+		//enumã¾ãŸã¯enum classã®å†…éƒ¨ã®å€¤ã‚’å–å¾—
 		template <typename EnumType>
 		inline constexpr auto unpackEnum(const EnumType& val) {
 			return static_cast<typename std::underlying_type<EnumType>::type>(val);

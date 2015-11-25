@@ -8,6 +8,7 @@
 
 namespace wawl {
 	namespace wnd {
+		
 		class Bitmap {
 		public:
 			Bitmap() = default;
@@ -101,6 +102,7 @@ namespace wawl {
 
 		};
 
+		//ãƒªã‚½ãƒ¼ã‚¹ã‹ã‚‰Bitmapã‚’èª­ã¿è¾¼ã‚€
 		Bitmap makeBitmapBySrc(const TString& instName) {
 			return Bitmap(
 				static_cast<::HBITMAP>(
@@ -115,7 +117,7 @@ namespace wawl {
 					)
 				);
 		}
-
+		
 		enum class MenuOption {
 			LineBreak = MFT_MENUBARBREAK,
 			Break = MFT_MENUBREAK,
@@ -124,16 +126,17 @@ namespace wawl {
 			RightOrder = MFT_RIGHTORDER
 		};
 		using UnifyMenuOption = _impl_UnifyEnum<MenuOption>;
-
+		
 		enum class MenuState : unsigned int {
-			Clear = NULL,
+			Clear = 0,
 			Check = MFS_CHECKED,
 			Default = MFS_DEFAULT,
 			Disable = MFS_DISABLED,
 			Hilite = MFS_HILITE
 		};
 		using UnifyMenuState = _impl_UnifyEnum<MenuState>;
-
+		
+		//ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã§ç”¨æ„ã•ã‚Œã¦ã„ã‚‹Menuç”¨Bitmap
 		enum class MenuBarBitmap : UintPtr {
 			Callback = reinterpret_cast<UintPtr>(HBMMENU_CALLBACK),
 			Close = reinterpret_cast<UintPtr>(HBMMENU_MBAR_CLOSE),
@@ -143,6 +146,7 @@ namespace wawl {
 			Restore = reinterpret_cast<UintPtr>(HBMMENU_MBAR_RESTORE),
 			System = reinterpret_cast<UintPtr>(HBMMENU_SYSTEM)
 		};
+		//ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã§ç”¨æ„ã•ã‚Œã¦ã„ã‚‹PopupMenuç”¨Bitmap
 		enum class PopupMenuBitmap : UintPtr {
 			Callback = reinterpret_cast<UintPtr>(HBMMENU_CALLBACK),
 			Close = reinterpret_cast<UintPtr>(HBMMENU_POPUP_CLOSE),
@@ -152,17 +156,17 @@ namespace wawl {
 			System = reinterpret_cast<UintPtr>(HBMMENU_SYSTEM)
 		};
 
-		//MenuBarBitmap, PopupMenuBitmap, Bitmap‚Ì‚¢‚¸‚ê‚©‚ğ•Û
+		//MenuBarBitmap, PopupMenuBitmap, Bitmapã®ã„ãšã‚Œã‹ã‚’ä¿æŒ
 		class MenuBitmap {
 		private:
-			//‚Ç‚ÌŒ^‚©
+			//ã©ã®å‹ã‹
 			enum class Tag {
 				MenuBar,
 				PopupMenu,
 				Bitmap
 			} tag_;
 
-			//•Û‚·‚éŒ^‚Ì–³–¼ƒŠƒXƒg
+			//ä¿æŒã™ã‚‹å‹ã®ç„¡åãƒªã‚¹ãƒˆ
 			union {
 				MenuBarBitmap mbb_;
 				PopupMenuBitmap pmb_;
@@ -223,7 +227,7 @@ namespace wawl {
 				clean();
 			}
 
-			//HBITMAP‚É•ÏŠ·
+			//HBITMAPã«å¤‰æ›
 			explicit operator ::HBITMAP() const {
 				if (tag_ == Tag::MenuBar)
 					return reinterpret_cast<::HBITMAP>(mbb_);
@@ -235,32 +239,13 @@ namespace wawl {
 
 		};
 
-		//Menu‚ÌƒAƒCƒeƒ€ƒf[ƒ^Bƒ†[ƒU[‚ª‘¼‚ÌêŠ‚Å“Æ©‚ÉID‚ğw’è‚·‚éê‡AID: 10000ˆÈã‚Íg—p•s‰ÂB
+		//Menuã®ã‚¢ã‚¤ãƒ†ãƒ ãƒ‡ãƒ¼ã‚¿ã€‚
+		//ãƒ¦ãƒ¼ã‚¶ãƒ¼ãŒä»–ã®å ´æ‰€ã§ç‹¬è‡ªã«IDã‚’æŒ‡å®šã™ã‚‹å ´åˆã€ID: 10000ä»¥ä¸Šã¯ä½¿ç”¨ä¸å¯ã€‚
 		template<typename T>
 		class _impl_MenuItem {
 		public:
 			_impl_MenuItem() = default;
 			_impl_MenuItem(const _impl_MenuItem&) = default;
-
-			//‹ŒƒR[ƒh
-			/*_impl_MenuItem(
-			const UnifyMenuType& option,
-			const UnifyMenuState& states,
-			const T& subMenu,
-			const Bitmap& checkMark,
-			const Bitmap& uncheckMark,
-			const TString& str,
-			const MenuBitmap& menuBmp
-			) :
-			_impl_MenuItem(
-			&option,
-			&states,
-			&subMenu,
-			&checkMark,
-			&uncheckMark,
-			&str,
-			&menuBmp
-			) {}*/
 
 			_impl_MenuItem(const ::MENUITEMINFO menuItem) {
 				info_ = menuItem;
@@ -283,53 +268,12 @@ namespace wawl {
 				return id_;
 			}
 
-			//id‚ÌŒ»İ‚ÌÅ‘å’l
+			//idã®ç¾åœ¨ã®æœ€å¤§å€¤
 			static int _impl_idCap_;
 
 		private:
 			::MENUITEMINFO info_ = {};
 			int id_ = _impl_idCap_;
-
-			//‹ŒƒR[ƒh
-			/*_impl_MenuItem(
-			const UnifyMenuType* option,
-			const UnifyMenuState* states,
-			const T* subMenu,
-			const Bitmap* checkMark,
-			const Bitmap* uncheckMark,
-			const TString* str,
-			const MenuBitmap* menuBmp
-			) {
-			::ZeroMemory(&info_, sizeof(info_));
-			info_.cbSize = sizeof(::MENUITEMINFO);
-			info_.fMask |= MIIM_ID;
-			info_.wID = id_;
-
-			if (option != nullptr)
-			info_.fMask |= MIIM_FTYPE,
-			info_.fType = option->get();
-			if (states != nullptr)
-			info_.fMask |= MIIM_STATE,
-			info_.fState = states->get();
-			if (subMenu != nullptr)
-			info_.fMask |= MIIM_SUBMENU,
-			info_.hSubMenu = subMenu->get();
-			if (checkMark != nullptr)
-			info_.fMask |= MIIM_CHECKMARKS,
-			info_.hbmpChecked = checkMark->get();
-			if (uncheckMark != nullptr)
-			info_.fMask |= MIIM_CHECKMARKS,
-			info_.hbmpUnchecked = uncheckMark->get();
-			if (str != nullptr)
-			info_.fMask |= MIIM_STRING,
-			info_.dwTypeData = &str->at(0),
-			info_.cch = static_cast<unsigned int>(str->size() + 1);
-			if (menuBmp != nullptr)
-			info_.fMask |= MIIM_BITMAP,
-			info_.hbmpItem = static_cast<::HBITMAP>(*menuBmp);
-
-			++_impl_idCap_;
-			}*/
 
 		};
 		class PopupMenu;
@@ -349,7 +293,7 @@ namespace wawl {
 			PopupMenu(const PopupMenu& menu) :
 				menu_(::CreatePopupMenu()) {
 
-				//TODO: ƒRƒs[Œnˆ—‚Ì‹Lq
+				//TODO: ã‚³ãƒ”ãƒ¼ç³»å‡¦ç†ã®è¨˜è¿°
 
 				if (menu_ == nullptr)
 					throw Error(::GetLastError());
@@ -358,7 +302,7 @@ namespace wawl {
 				++idCap_;
 			}
 
-			//ƒƒjƒ…[‚ğ’Ç‰Á
+			//ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚’è¿½åŠ 
 			PopupMenu& add(const MenuItem& newItem) {
 				if (!::InsertMenuItem(
 					menu_,
@@ -383,7 +327,7 @@ namespace wawl {
 			}
 
 		private:
-			//id‚ÌŒ»İ‚ÌÅ‘å’l
+			//idã®ç¾åœ¨ã®æœ€å¤§å€¤
 			static int idCap_;
 			int id_ = idCap_;
 			::HMENU menu_ = nullptr;
@@ -391,7 +335,7 @@ namespace wawl {
 		};
 		int PopupMenu::idCap_ = 10000;
 
-		//Menu‚Ì‹æØ‚èü
+		//Menuã®åŒºåˆ‡ã‚Šç·š
 		class MenuSeparator {
 		public:
 			MenuSeparator(const MenuSeparator&) = default;
@@ -417,12 +361,11 @@ namespace wawl {
 			}
 
 		private:
-			static ::MENUITEMINFO info_;
+			::MENUITEMINFO info_;
 
 		};
-		::MENUITEMINFO MenuSeparator::info_;
 
-		//Menu‚Ì•¶š—ñ
+		//Menuã®æ–‡å­—åˆ—
 		class MenuString {
 		public:
 			MenuString(const MenuString&) = default;
@@ -528,7 +471,8 @@ namespace wawl {
 
 		private:
 			::MENUITEMINFO info_;
-
+			
+			//ãƒ«ãƒ¼ãƒˆã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 			MenuString(
 				const TString* str,
 				const UnifyMenuOption* options,
@@ -580,7 +524,8 @@ namespace wawl {
 				if (menu_ == nullptr)
 					throw Error(::GetLastError());
 			}
-
+			
+			//ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã«è¦ç´ ã‚’è¿½åŠ ã™ã‚‹
 			Menu& add(const TString& str, const PopupMenu& newItem) {
 				MenuString child(str, newItem);
 

@@ -10,34 +10,34 @@
 namespace wawl {
 	namespace input {
 
-		//ƒ}ƒEƒXŠÖ˜A
+		//ãƒã‚¦ã‚¹é–¢é€£
 		namespace mouse {
 
-			//ƒ}ƒEƒX‚ÌƒXƒNƒŠ[ƒ“À•W‚ğæ“¾
+			//ãƒã‚¦ã‚¹ã®ã‚¹ã‚¯ãƒªãƒ¼ãƒ³åº§æ¨™ã‚’å–å¾—
 			inline Position&& getPos() {
 				LPPOINT posPtr;
 
 				::GetCursorPos(posPtr);
 				return std::move(Position{ posPtr->x, posPtr->y });
 			}
-			//ƒ}ƒEƒX‚ÌƒXƒNƒŠ[ƒ“À•W‚ğİ’è
+			//ãƒã‚¦ã‚¹ã®ã‚¹ã‚¯ãƒªãƒ¼ãƒ³åº§æ¨™ã‚’è¨­å®š
 			inline bool setPos(const Position& pos) {
 				return ::SetCursorPos(pos.x, pos.y) != 0;
 			}
 
-			//ƒ}ƒEƒX‚ğ•\¦
+			//ãƒã‚¦ã‚¹ã‚’è¡¨ç¤º
 			inline void show() {
 				while (::ShowCursor(true) < 0);
 			}
-			//ƒ}ƒEƒX‚ğ”ñ•\¦
+			//ãƒã‚¦ã‚¹ã‚’éè¡¨ç¤º
 			inline void hide() {
 				while (::ShowCursor(false) >= 0);
 			}
-			//ƒ}ƒEƒX•\¦ƒJƒEƒ“ƒg‚ğæ“¾
+			//ãƒã‚¦ã‚¹è¡¨ç¤ºã‚«ã‚¦ãƒ³ãƒˆã‚’å–å¾—
 			inline int getShowCount() {
 				return (::ShowCursor(false), ::ShowCursor(true));
 			}
-			//ƒ}ƒEƒX•\¦ƒJƒEƒ“ƒg‚ğ‘«‚·
+			//ãƒã‚¦ã‚¹è¡¨ç¤ºã‚«ã‚¦ãƒ³ãƒˆã‚’è¶³ã™
 			void addShowCount(int n) {
 				for (int i = 0; i < std::abs(n) - 1; ++i)
 					::ShowCursor(n >= 0);
@@ -45,7 +45,7 @@ namespace wawl {
 
 		}
 
-		//ƒL[ƒ{[ƒhŠÖ˜A
+		//ã‚­ãƒ¼ãƒœãƒ¼ãƒ‰é–¢é€£
 		namespace kb {
 
 			enum class Code : unsigned int {
@@ -222,14 +222,14 @@ namespace wawl {
 				_impl_EndEnum = 0xFF
 			};
 
-			//ƒL[‚ª‰Ÿ‚³‚ê‚Ä‚¢‚é‚©æ“¾
+			//ã‚­ãƒ¼ãŒæŠ¼ã•ã‚Œã¦ã„ã‚‹ã‹å–å¾—
 			inline bool getState(const Code key, bool doGetToggle = false) {
 				return (::GetAsyncKeyState(static_cast<int>(key)) & (doGetToggle ? 0x0001 : 0x8000)) != 0;
 			}
 
-			//‚·‚×‚Ä‚ÌƒL[
+			//ã™ã¹ã¦ã®ã‚­ãƒ¼
 			using Allkey = std::array < bool, static_cast<std::size_t>(Code::_impl_EndEnum) + 1 >;
-			//‚·‚×‚Ä‚ÌƒL[“ü—Íó‘Ô‚ğˆêŠ‡æ“¾
+			//ã™ã¹ã¦ã®ã‚­ãƒ¼å…¥åŠ›çŠ¶æ…‹ã‚’ä¸€æ‹¬å–å¾—
 			Allkey&& getAllState(bool doGetToggle = false) {
 				Byte keyboard[static_cast<std::size_t>(Code::_impl_EndEnum) + 1];
 				if (::GetKeyboardState(keyboard) == false)

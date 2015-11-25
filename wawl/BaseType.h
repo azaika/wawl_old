@@ -14,47 +14,47 @@
 
 namespace wawl {
 
-	//‘g‚İ‚İŒ^using
+	//çµ„ã¿è¾¼ã¿å‹using
 #ifdef TRUE
 
-	//Ascii•¶šŒ^
+	//Asciiæ–‡å­—å‹
 	using AChar = ::CHAR;
-	//ƒƒCƒh•¶šŒ^
+	//ãƒ¯ã‚¤ãƒ‰æ–‡å­—å‹
 	using WChar = ::WCHAR;
-	//”Ä—p•¶šŒ^
+	//æ±ç”¨æ–‡å­—å‹
 	using TChar = ::TCHAR;
 
-	//Ascii•¶š—ñŒ^
+	//Asciiæ–‡å­—åˆ—å‹
 	using AString = std::basic_string < AChar >;
-	//ƒƒCƒh•¶š—ñŒ^
+	//ãƒ¯ã‚¤ãƒ‰æ–‡å­—åˆ—å‹
 	using WString = std::basic_string < WChar >;
-	//”Ä—p•¶š—ñŒ^
+	//æ±ç”¨æ–‡å­—åˆ—å‹
 	using TString = std::basic_string < TChar >;
 
-	//À¿“I‚É‚Íint‚¾‚¯‚Çˆê‰éŒ¾
+	//å®Ÿè³ªçš„ã«ã¯intã ã‘ã©ä¸€å¿œå®£è¨€
 	using Bool = ::BOOL;
-	//•„†–³‚µ8bit®”
+	//ç¬¦å·ç„¡ã—8bitæ•´æ•°
 	using Byte = ::BYTE;
-	//•„†–³‚µ16bit®”
+	//ç¬¦å·ç„¡ã—16bitæ•´æ•°
 	using Word = ::WORD;
-	//•„†–³‚µ32bit®”
+	//ç¬¦å·ç„¡ã—32bitæ•´æ•°
 	using Dword = ::DWORD;
-	//•„†‚È‚µ64bit®”
+	//ç¬¦å·ãªã—64bitæ•´æ•°
 	using Qword = unsigned long long;
 
-	//ƒ|ƒCƒ“ƒ^‚ğŠi”[‚·‚é®”Œ^
+	//ãƒã‚¤ãƒ³ã‚¿ã‚’æ ¼ç´ã™ã‚‹æ•´æ•°å‹
 	using IntPtr = ::INT_PTR;
 	using UintPtr = ::UINT_PTR;
 
-	//ƒnƒ“ƒhƒ‹
+	//ãƒãƒ³ãƒ‰ãƒ«
 	using Handle = ::HANDLE;
 
 #endif
 
-	//ƒ‰ƒCƒuƒ‰ƒŠ‚Ì“s‡“I‚ÈŒ^
+	//ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã®éƒ½åˆçš„ãªå‹
 #ifdef TRUE
 
-	//Šî–{“I‚È”Ä—pÀ•WŒ^
+	//åŸºæœ¬çš„ãªæ±ç”¨åº§æ¨™å‹
 	template <typename VTy>
 	struct Coordinates {
 
@@ -62,10 +62,10 @@ namespace wawl {
 
 		ValueType x = 0, y = 0;
 
-		//ƒfƒtƒHƒ‹ƒgƒRƒ“ƒXƒgƒ‰ƒNƒ^
+		//ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 		Coordinates() = default;
 
-		//ƒRƒs[ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+		//ã‚³ãƒ”ãƒ¼ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 		template <typename T>
 		Coordinates(const Coordinates<T>& p_) :
 			x(static_cast<ValueType>(p_.x)),
@@ -85,8 +85,8 @@ namespace wawl {
 	using Position = Coordinates < int >;
 	using Rectangle = Position;
 
-	//Œ¾ŒêƒR[ƒh
-	//TODO : ’Ç‰Á
+	//è¨€èªã‚³ãƒ¼ãƒ‰
+	//TODO : è¿½åŠ 
 	enum class Lang : Dword {
 		UserDefault = LANG_USER_DEFAULT,
 		SysDefault = LANG_SYSTEM_DEFAULT,
@@ -139,11 +139,11 @@ namespace wawl {
 
 	};
 
-	//”Ä—penum‘g‚İ‡‚í‚¹Œ^
+	//æ±ç”¨enumçµ„ã¿åˆã‚ã›å‹
 	template <typename EnumType>
 	class _impl_UnifyEnum {
 	public:
-		//enum‚Ì“à•”Œ^
+		//enumã®å†…éƒ¨å‹
 		using ValueType = typename std::underlying_type<EnumType>::type;
 
 		_impl_UnifyEnum() = default;
@@ -163,7 +163,7 @@ namespace wawl {
 				vals_ |= static_cast<ValueType>(val);
 		}
 
-		//“à•”‚Ì’l‚ğæ“¾
+		//å†…éƒ¨ã®å€¤ã‚’å–å¾—
 		ValueType& get() {
 			return vals_;
 		}
@@ -177,7 +177,7 @@ namespace wawl {
 			return vals_;
 		}
 
-		//‡¬
+		//åˆæˆ
 		_impl_UnifyEnum<ValueType>& compose(const ValueType& val) {
 			vals_ |= static_cast<ValueType>(val);
 			return *this;
@@ -189,7 +189,7 @@ namespace wawl {
 			return std::move(_impl_UnifyEnum<ValueType>(vals_ | val));
 		}
 
-		//ŠÜ‚Ü‚ê‚Ä‚¢‚é‚©‚Ç‚¤‚©
+		//å«ã¾ã‚Œã¦ã„ã‚‹ã‹ã©ã†ã‹
 		constexpr bool has(const ValueType& val) const {
 			return (vals_ & val) != 0;
 		}
@@ -211,7 +211,7 @@ namespace wawl {
 
 #endif
 
-	//WinAPI\‘¢‘Ì‚Ìƒ‰ƒbƒv
+	//WinAPIæ§‹é€ ä½“ã®ãƒ©ãƒƒãƒ—
 #ifdef TRUE
 
 	/* test code
@@ -267,7 +267,7 @@ namespace wawl {
 	}
 	~test code*/
 
-	//Window•\¦Œ`®
+	//Windowè¡¨ç¤ºå½¢å¼
 	enum class WndShowMode : Word {
 		ForceMinimize = SW_FORCEMINIMIZE,
 		Hide = SW_HIDE,

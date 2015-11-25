@@ -288,7 +288,7 @@ namespace wawl {
 			Rect = reinterpret_cast<UintPtr>(TEXT("RECT")),
 		};*/
 
-		//WindowƒvƒƒV[ƒWƒƒ‚ÌéŒ¾
+		//Windowãƒ—ãƒ­ã‚·ãƒ¼ã‚¸ãƒ£ã®å®£è¨€
 		::LRESULT CALLBACK _impl_MsgProc(::HWND hwnd, unsigned int uMsg, ::WPARAM wParam, ::LPARAM lParam);
 
 		class Prop {
@@ -359,7 +359,7 @@ namespace wawl {
 					&menuName
 					) {}
 
-			//TODO: ƒRƒ“ƒXƒgƒ‰ƒNƒ^’Ç‰Á
+			//TODO: ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿è¿½åŠ 
 
 			TString getName() const {
 				return util::valToTStr(id_);
@@ -373,7 +373,7 @@ namespace wawl {
 			int id_ = 0;
 			Word atom_ = 0;
 
-			//ƒ‹[ƒgƒRƒ“ƒXƒgƒ‰ƒNƒ^
+			//ãƒ«ãƒ¼ãƒˆã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 			Prop(
 				const UnifyPropOption* options,
 				const Icon* icon,
@@ -413,7 +413,7 @@ namespace wawl {
 		};
 		int Prop::idCap_ = 1;
 
-		//WindowƒXƒ^ƒCƒ‹
+		//Windowã‚¹ã‚¿ã‚¤ãƒ«
 		enum class Style : Dword {
 			Bordered = WS_BORDER,
 			Caption = WS_CAPTION,
@@ -439,7 +439,7 @@ namespace wawl {
 		};
 		using UnifyStyle = _impl_UnifyEnum<Style>;
 
-		//Šg’£WindowƒXƒ^ƒCƒ‹
+		//æ‹¡å¼µWindowã‚¹ã‚¿ã‚¤ãƒ«
 		enum class ExtStyle : Dword {
 			EnableFileDD = WS_EX_ACCEPTFILES,
 			ShowToTaskbar = WS_EX_APPWINDOW,
@@ -473,8 +473,12 @@ namespace wawl {
 
 			Window& operator = (const Window&) = delete;
 
-			// WindowƒvƒƒV[ƒWƒƒ‚ÌÀ‘Ô
+			// Windowãƒ—ãƒ­ã‚·ãƒ¼ã‚¸ãƒ£ã®å®Ÿæ…‹
 			friend ::LRESULT CALLBACK _impl_MsgProc(::HWND hwnd, unsigned int msg, ::WPARAM wParam, ::LPARAM lParam);
+
+			bool setTitle(const TString& title) {
+				return ::SetWindowText(hwnd_, title.c_str()) != 0;
+			}
 
 			bool isAlive() {
 				return hwnd_ != nullptr;
@@ -491,14 +495,14 @@ namespace wawl {
 					throw Error(::GetLastError());
 			}
 
-			bool show() {
+			bool setShowMode() {
 				if (::ShowWindow(hwnd_, sys::getWndShowmode()) == 0)
 					return false;
 
 				::UpdateWindow(hwnd_);
 				return true;
 			}
-			bool show(ShowMode showMode) {
+			bool setShowMode(ShowMode showMode) {
 				if (::ShowWindow(hwnd_, util::unpackEnum(showMode)) == 0)
 					return false;
 
@@ -581,18 +585,18 @@ namespace wawl {
 
 		protected:
 			::HWND hwnd_ = nullptr;
-			//©g‚Ö‚ÌQÆ‚ğ•Û
+			//è‡ªèº«ã¸ã®å‚ç…§ã‚’ä¿æŒ
 			static std::unordered_map<::HWND, Window*> winRefs_;
-			//CreateWindowEx‚ğŒÄ‚ñ‚¾ƒNƒ‰ƒX
+			//CreateWindowExã‚’å‘¼ã‚“ã ã‚¯ãƒ©ã‚¹
 			static Window* creater_;
-			//ƒƒbƒZ[ƒWƒvƒƒV[ƒWƒƒ
+			//ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãƒ—ãƒ­ã‚·ãƒ¼ã‚¸ãƒ£
 			std::unordered_map<unsigned int, ProcType> msgProcs_;
 
 		};
 		std::unordered_map<::HWND, Window*> Window::winRefs_;
 		Window* Window::creater_ = nullptr;
 		::LRESULT CALLBACK _impl_MsgProc(::HWND hwnd, unsigned int msg, ::WPARAM wParam, ::LPARAM lParam) {
-			//‘¶İ‚µ‚È‚¢ê‡ƒŠƒXƒg‚É“o˜^
+			//å­˜åœ¨ã—ãªã„å ´åˆãƒªã‚¹ãƒˆã«ç™»éŒ²
 			if (Window::winRefs_.find(hwnd) == Window::winRefs_.end()) {
 				
 				Window::winRefs_.insert(std::make_pair(hwnd, Window::creater_));
@@ -600,9 +604,9 @@ namespace wawl {
 				return ::DefWindowProc(hwnd, msg, wParam, lParam);
 			}
 
-			//”jŠü‚³‚ê‚½‚ç“o˜^‰ğœ
+			//ç ´æ£„ã•ã‚ŒãŸã‚‰ç™»éŒ²è§£é™¤
 			if (msg == WM_DESTROY) {
-				//ƒ†[ƒU[’è‹`‚ÌDestroy‚ğŒÄ‚Ô
+				//ãƒ¦ãƒ¼ã‚¶ãƒ¼å®šç¾©ã®Destroyã‚’å‘¼ã¶
 				const auto& procs = Window::winRefs_[hwnd]->msgProcs_;
 				if (procs.find(WM_DESTROY) != procs.end())
 					procs.at(WM_DESTROY)(wParam, lParam);
@@ -673,7 +677,7 @@ namespace wawl {
 					nullptr
 					) {}
 
-			//TODO: ƒRƒ“ƒXƒgƒ‰ƒNƒ^‚Ìí—Ş‘‰Á
+			//TODO: ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ã®ç¨®é¡å¢—åŠ 
 
 			RootWindow(
 				const TString& titleName,
@@ -739,10 +743,10 @@ namespace wawl {
 
 		};
 
-		//MessageBoxŠÖ˜A
+		//MessageBoxé–¢é€£
 		namespace mb {
 
-			//showMessage‚Å•\¦‚·‚éƒ{ƒ^ƒ“
+			//showMessageã§è¡¨ç¤ºã™ã‚‹ãƒœã‚¿ãƒ³
 			enum class Button : unsigned int {
 				Failed = MB_ABORTRETRYIGNORE,
 				Help = MB_HELP,
@@ -752,7 +756,7 @@ namespace wawl {
 				YesNo = MB_YESNO,
 				YesNoCancel = MB_YESNOCANCEL
 			};
-			//showMessage‚Å•\¦‚·‚éƒAƒCƒRƒ“
+			//showMessageã§è¡¨ç¤ºã™ã‚‹ã‚¢ã‚¤ã‚³ãƒ³
 			enum class Icon : unsigned int {
 				Warning = MB_ICONWARNING,
 				Info = MB_ICONINFORMATION,
@@ -760,14 +764,14 @@ namespace wawl {
 				Stop = MB_ICONSTOP
 			};
 			using UnifyIcon = _impl_UnifyEnum<Icon>;
-			//showMessage•\¦’†‚Ì‘¼‚ÌWindow‘€ì‹K§
+			//showMessageè¡¨ç¤ºä¸­ã®ä»–ã®Windowæ“ä½œè¦åˆ¶
 			enum class CtrlRegLevel : unsigned int {
 				App = MB_APPLMODAL,
 				System = MB_SYSTEMMODAL,
 				Task = MB_TASKMODAL
 			};
 			using UnifyCtrlRegLevel = _impl_UnifyEnum<CtrlRegLevel>;
-			//showMessage‚Ì•\¦Œ`®
+			//showMessageã®è¡¨ç¤ºå½¢å¼
 			enum class Style : unsigned int {
 				OnlyDefaultDesktop = MB_DEFAULT_DESKTOP_ONLY,
 				RightText = MB_RIGHT,
@@ -778,7 +782,7 @@ namespace wawl {
 				NotificationOnNT351 = MB_SERVICE_NOTIFICATION_NT3X
 			};
 			using UnifyStyle = _impl_UnifyEnum<Style>;
-			//showMessage‚Ì•Ô‚è’l
+			//showMessageã®è¿”ã‚Šå€¤
 			enum class Result : int {
 				Abort = IDABORT,
 				Cancel = IDCANCEL,
@@ -790,7 +794,8 @@ namespace wawl {
 				TryAgain = IDTRYAGAIN,
 				Yes = IDYES
 			};
-
+			
+			//ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãƒœãƒƒã‚¯ã‚¹ã‚’è¡¨ç¤º
 			Result show(const TString& title, const TString& text, Button button) {
 				return static_cast<Result>(
 					::MessageBox(
@@ -802,7 +807,7 @@ namespace wawl {
 					);
 			}
 
-			//TODO : showMessage‚ÌƒI[ƒo[ƒ[ƒh’Ç‰Á
+			//TODO : showMessageã®ã‚ªãƒ¼ãƒãƒ¼ãƒ­ãƒ¼ãƒ‰è¿½åŠ 
 
 		} //::wawl::wnd::mb
 	} //::wawl::wnd

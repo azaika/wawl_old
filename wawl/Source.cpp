@@ -4,7 +4,7 @@
 #include "FileSystem.h"
 #include "Window.h"
 
-//FXusing‚·‚é
+//è‰²ã€…usingã™ã‚‹
 #include "Using.h"
 
 void wawlMain() {
@@ -22,30 +22,30 @@ void wawlMain() {
 	}
 
 	while (Sleep(1), true) {
-		//I—¹ˆ—
+		//çµ‚äº†å‡¦ç†
 		if (kb::getState(KeyCode::Escape)) {
 			if (mb::show(L"Application end", L"Do you shutdown the application?", mb::Button::YesNo) == mb::Result::Yes)
 				break;
 		}
-		//ƒL[ƒCƒ“ƒvƒbƒg‚ÌƒeƒXƒg
+		//ã‚­ãƒ¼ã‚¤ãƒ³ãƒ—ãƒƒãƒˆã®ãƒ†ã‚¹ãƒˆ
 		else if (kb::getState(KeyCode::X))
 			mb::show(L"KeyX pushed", L"Input successed", mb::Button::OK);
-		//ini¶¬‚ÌƒeƒXƒg
+		//iniç”Ÿæˆã®ãƒ†ã‚¹ãƒˆ
 		else if (kb::getState(KeyCode::I)) {
 			fs::IniFile aaa(L"./test.ini");
 			aaa.write(L"Section", L"Key", L"Data");
 		}
-		//ƒ}ƒEƒX‘€ì‚ÌƒeƒXƒg
+		//ãƒã‚¦ã‚¹æ“ä½œã®ãƒ†ã‚¹ãƒˆ
 		else if (kb::getState(KeyCode::One))
 			mc::setPos({ 100, 100 });
-		//‘¼ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‹N“®‚ÌƒeƒXƒg
+		//ä»–ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³èµ·å‹•ã®ãƒ†ã‚¹ãƒˆ
 		else if (kb::getState(KeyCode::Two)) {
 			fs::Process proc(L"notepad.exe", fs::StartupInfo{});
 			if(!proc)
 				mb::show(L"Error", proc.getError().msg(), mb::Button::OK);
 		}
 		else if (kb::getState(KeyCode::W))
-			window.show();
+			window.setShowMode();
 
 		if (window.isAlive()) {
 			if (kb::getState(KeyCode::R))

@@ -14,12 +14,12 @@
 namespace wawl {
 	namespace fs {
 
-		//ƒtƒ@ƒCƒ‹ƒnƒ“ƒhƒ‹
+		//ãƒ•ã‚¡ã‚¤ãƒ«ãƒãƒ³ãƒ‰ãƒ«
 		using FileHandle = ::HANDLE;
-		//HANDLE“à•”Œ^
+		//HANDLEå†…éƒ¨å‹
 		using _impl_UnderHandle = std::remove_pointer<::HANDLE>::type;
 
-		//ƒZƒLƒ…ƒŠƒeƒBw’èq
+		//ã‚»ã‚­ãƒ¥ãƒªãƒ†ã‚£æŒ‡å®šå­
 		class SecurityDesc {
 		public:
 			SecurityDesc() {
@@ -30,7 +30,7 @@ namespace wawl {
 			SecurityDesc& operator = (const SecurityDesc&) = default;
 			SecurityDesc& operator = (SecurityDesc&&) = default;
 
-			//“à•”‚Ì’l‚ğæ“¾
+			//å†…éƒ¨ã®å€¤ã‚’å–å¾—
 			::SECURITY_DESCRIPTOR& get() {
 				return secDesc_;
 			}
@@ -48,7 +48,7 @@ namespace wawl {
 			::SECURITY_DESCRIPTOR secDesc_;
 
 		};
-		//ƒZƒLƒ…ƒŠƒeƒB‹Lqq
+		//ã‚»ã‚­ãƒ¥ãƒªãƒ†ã‚£è¨˜è¿°å­
 		class SecurityAttrib {
 			friend SecurityAttrib;
 
@@ -79,7 +79,7 @@ namespace wawl {
 					secAttr_.lpSecurityDescriptor = nullptr;
 			}
 
-			//“à•”‚Ì’l‚ğæ“¾
+			//å†…éƒ¨ã®å€¤ã‚’å–å¾—
 			::SECURITY_ATTRIBUTES& get() {
 				return secAttr_;
 			}
@@ -94,14 +94,14 @@ namespace wawl {
 			}
 
 		private:
-			//–{‘Ì
+			//æœ¬ä½“
 			::SECURITY_ATTRIBUTES secAttr_;
-			//©•ª‚ÌSecurityDesc
+			//è‡ªåˆ†ã®SecurityDesc
 			std::unique_ptr<SecurityDesc> secDesc_ = nullptr;
 
 		};
 
-		//ƒRƒ“ƒ\[ƒ‹‚ÌF
+		//ã‚³ãƒ³ã‚½ãƒ¼ãƒ«ã®è‰²
 		enum class ConsoleColor : Dword {
 			Blue = BACKGROUND_BLUE,
 			Green = BACKGROUND_GREEN,
@@ -110,7 +110,7 @@ namespace wawl {
 		};
 		using UnifyConsoleColor = _impl_UnifyEnum < ConsoleColor >;
 
-		//ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‹N“®‚ÌƒIƒvƒVƒ‡ƒ“
+		//ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³èµ·å‹•æ™‚ã®ã‚ªãƒ—ã‚·ãƒ§ãƒ³
 		enum class StartupOption : Dword {
 			Fullscreen = STARTF_RUNFULLSCREEN,
 			ForceChangeCursor = STARTF_FORCEONFEEDBACK,
@@ -121,7 +121,7 @@ namespace wawl {
 		};
 		using UnifyStartupOption = _impl_UnifyEnum < StartupOption >;
 
-		//ƒAƒNƒZƒXw’èq
+		//ã‚¢ã‚¯ã‚»ã‚¹æŒ‡å®šå­
 		enum class AccessDesc : Dword {
 			None = NULL,
 			All = GENERIC_ALL,
@@ -141,7 +141,7 @@ namespace wawl {
 		};
 		using UnifyAccessDesc = _impl_UnifyEnum < AccessDesc >;
 
-		//ƒtƒ@ƒCƒ‹ƒVƒFƒAŒ`®
+		//ãƒ•ã‚¡ã‚¤ãƒ«ã‚·ã‚§ã‚¢å½¢å¼
 		enum class FileSharePermit : Dword {
 			None = NULL,
 			Delete = FILE_SHARE_DELETE,
@@ -150,7 +150,7 @@ namespace wawl {
 		};
 		using UnifyFileSharePermit = _impl_UnifyEnum < FileSharePermit >;
 
-		//ƒtƒ@ƒCƒ‹¶¬‹K’è
+		//ãƒ•ã‚¡ã‚¤ãƒ«ç”Ÿæˆè¦å®š
 		enum class FileCreateProv : Dword {
 			New = CREATE_NEW,
 			AlwaysNew = CREATE_ALWAYS,
@@ -160,7 +160,7 @@ namespace wawl {
 		};
 		using UnifyFileCreateProv = _impl_UnifyEnum < FileCreateProv >;
 
-		//ƒtƒ@ƒCƒ‹‚Ì‘®«‹Lqq
+		//ãƒ•ã‚¡ã‚¤ãƒ«ã®å±æ€§è¨˜è¿°å­
 		enum class FileAttrib : Dword {
 			Archive = FILE_ATTRIBUTE_ARCHIVE,
 			Encrypt = FILE_ATTRIBUTE_ENCRYPTED,
@@ -193,7 +193,7 @@ namespace wawl {
 		};
 		using UnifyFileAttrib = _impl_UnifyEnum < FileAttrib >;
 
-		//ƒtƒ@ƒCƒ‹
+		//ãƒ•ã‚¡ã‚¤ãƒ«
 		class File {
 		public:
 			File() = default;
@@ -307,7 +307,7 @@ namespace wawl {
 					&baseFile
 					) {}
 
-			//“à•”‚Ì’l‚ğæ“¾
+			//å†…éƒ¨ã®å€¤ã‚’å–å¾—
 			FileHandle get() const {
 				return file_.get();
 			}
@@ -316,14 +316,14 @@ namespace wawl {
 			}
 
 		private:
-			//–{‘Ì
+			//æœ¬ä½“
 			std::shared_ptr<_impl_UnderHandle> file_ = nullptr;
-			//ˆê•”ˆø”‚Ì•Û‘¶
+			//ä¸€éƒ¨å¼•æ•°ã®ä¿å­˜
 			std::shared_ptr<SecurityAttrib> mySecAttr_ = nullptr;
 
 		};
 
-		//ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‹N“®‚Ì‚½‚ß‚Ìî•ñ
+		//ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³èµ·å‹•ã®ãŸã‚ã®æƒ…å ±
 		class StartupInfo {
 			friend StartupInfo;
 		public:
@@ -348,32 +348,32 @@ namespace wawl {
 				) {
 				::ZeroMemory(&suInfo_, sizeof(suInfo_));
 
-				//ƒTƒCƒYİ’è
+				//ã‚µã‚¤ã‚ºè¨­å®š
 				suInfo_.cb = sizeof(::STARTUPINFO);
-				//ƒfƒXƒNƒgƒbƒv–¼w’è
+				//ãƒ‡ã‚¹ã‚¯ãƒˆãƒƒãƒ—åæŒ‡å®š
 				if (desktopName != nullptr)
 					myDesktopName_ = *desktopName,
 					suInfo_.lpDesktop = const_cast<TChar*>(myDesktopName_.c_str());
-				//Window‚Ìƒ^ƒCƒgƒ‹w’è
+				//Windowã®ã‚¿ã‚¤ãƒˆãƒ«æŒ‡å®š
 				if (wndTitle != nullptr)
 					myTitle_ = *wndTitle,
 					suInfo_.lpTitle = const_cast<TChar*>(myTitle_.c_str());
-				//Window‚ÌÀ•Wİ’è
+				//Windowã®åº§æ¨™è¨­å®š
 				if (wndPos != nullptr)
 					suInfo_.dwFlags |= STARTF_USEPOSITION,
 					suInfo_.dwX = wndPos->x,
 					suInfo_.dwY = wndPos->y;
-				//Window‚Ì‘å‚«‚³İ’è
+				//Windowã®å¤§ãã•è¨­å®š
 				if (wndSize != nullptr)
 					suInfo_.dwFlags |= STARTF_USESIZE,
 					suInfo_.dwXSize = wndSize->x,
 					suInfo_.dwYSize = wndSize->y;
-				//Console‚Ìƒoƒbƒtƒ@[‚Ì‘å‚«‚³İ’è
+				//Consoleã®ãƒãƒƒãƒ•ã‚¡ãƒ¼ã®å¤§ãã•è¨­å®š
 				if (consoleBuf != nullptr)
 					suInfo_.dwFlags |= STARTF_USECOUNTCHARS,
 					suInfo_.dwXCountChars = consoleBuf->x,
 					suInfo_.dwYCountChars = consoleBuf->y;
-				//Console‚Ì•¶šFA”wŒiFİ’è
+				//Consoleã®æ–‡å­—è‰²ã€èƒŒæ™¯è‰²è¨­å®š
 				if (consoleStrColors != nullptr)
 					suInfo_.dwFlags |= STARTF_USEFILLATTRIBUTE,
 					suInfo_.dwFillAttribute |= consoleStrColors->get();
@@ -382,11 +382,11 @@ namespace wawl {
 					suInfo_.dwFillAttribute |= consoleBgColors->get();
 				if (startupOptions != nullptr)
 					suInfo_.dwFlags |= startupOptions->get();
-				//Window•\¦Œ`®‚Ìİ’è
+				//Windowè¡¨ç¤ºå½¢å¼ã®è¨­å®š
 				if (wndShowModes != nullptr)
 					suInfo_.dwFlags |= STARTF_USESHOWWINDOW,
 					suInfo_.wShowWindow = wndShowModes->get();
-				//•W€“ü—ÍAo—ÍAƒGƒ‰[o—Íƒtƒ@ƒCƒ‹‚Ìİ’è
+				//æ¨™æº–å…¥åŠ›ã€å‡ºåŠ›ã€ã‚¨ãƒ©ãƒ¼å‡ºåŠ›ãƒ•ã‚¡ã‚¤ãƒ«ã®è¨­å®š
 				if (stdInput != nullptr)
 					myInput_ = *stdInput,
 					suInfo_.dwFlags |= STARTF_USESTDHANDLES,
@@ -542,47 +542,47 @@ namespace wawl {
 					&stdError
 					) {}
 
-			//‡¬
+			//åˆæˆ
 			StartupInfo& operator |= (const StartupInfo& si) {
-				//ƒfƒXƒNƒgƒbƒv–¼w’è
+				//ãƒ‡ã‚¹ã‚¯ãƒˆãƒƒãƒ—åæŒ‡å®š
 				if (suInfo_.lpDesktop == nullptr &&
 					si.get().lpDesktop != nullptr)
 					myDesktopName_ = si.get().lpDesktop,
 					suInfo_.lpDesktop = const_cast<TChar*>(myDesktopName_.c_str());
-				//Window‚Ìƒ^ƒCƒgƒ‹w’è
+				//Windowã®ã‚¿ã‚¤ãƒˆãƒ«æŒ‡å®š
 				if (suInfo_.lpTitle == nullptr &&
 					si.get().lpTitle != nullptr)
 					myTitle_ = si.get().lpTitle,
 					suInfo_.lpTitle = const_cast<TChar*>(myTitle_.c_str());
-				//Window‚ÌÀ•Wİ’è
+				//Windowã®åº§æ¨™è¨­å®š
 				if ((suInfo_.dwFlags & STARTF_USEPOSITION) == 0 &&
 					(si.get().dwFlags & STARTF_USEPOSITION) != 0)
 					suInfo_.dwFlags |= STARTF_USEPOSITION,
 					suInfo_.dwX = si.get().dwX,
 					suInfo_.dwY = si.get().dwY;
-				//Window‚Ì‘å‚«‚³İ’è
+				//Windowã®å¤§ãã•è¨­å®š
 				if ((suInfo_.dwFlags & STARTF_USESIZE) == 0 &&
 					(si.get().dwFlags & STARTF_USESIZE) != 0)
 					suInfo_.dwFlags |= STARTF_USESIZE,
 					suInfo_.dwXSize = si.get().dwXSize,
 					suInfo_.dwYSize = si.get().dwYSize;
-				//Console‚Ìƒoƒbƒtƒ@[‚Ì‘å‚«‚³İ’è
+				//Consoleã®ãƒãƒƒãƒ•ã‚¡ãƒ¼ã®å¤§ãã•è¨­å®š
 				if ((suInfo_.dwFlags & STARTF_USECOUNTCHARS) == 0 &&
 					(si.get().dwFlags & STARTF_USECOUNTCHARS) != 0)
 					suInfo_.dwFlags |= STARTF_USECOUNTCHARS,
 					suInfo_.dwXCountChars = si.get().dwXCountChars,
 					suInfo_.dwYCountChars = si.get().dwYCountChars;
-				//Console‚Ì•¶šFA”wŒiFİ’è
+				//Consoleã®æ–‡å­—è‰²ã€èƒŒæ™¯è‰²è¨­å®š
 				if ((suInfo_.dwFlags & STARTF_USEFILLATTRIBUTE) == 0 &&
 					(si.get().dwFlags & STARTF_USEFILLATTRIBUTE) != 0)
 					suInfo_.dwFlags |= STARTF_USEFILLATTRIBUTE,
 					suInfo_.dwFillAttribute |= si.get().dwFillAttribute;
-				//Window•\¦Œ`®‚Ìİ’è
+				//Windowè¡¨ç¤ºå½¢å¼ã®è¨­å®š
 				if ((suInfo_.dwFlags & STARTF_USESHOWWINDOW) == 0 &&
 					(si.get().dwFlags & STARTF_USESHOWWINDOW) != 0)
 					suInfo_.dwFlags |= STARTF_USESHOWWINDOW,
 					suInfo_.wShowWindow = si.get().wShowWindow;
-				//•W€“ü—ÍAo—ÍAƒGƒ‰[o—Íƒtƒ@ƒCƒ‹‚Ìİ’è
+				//æ¨™æº–å…¥åŠ›ã€å‡ºåŠ›ã€ã‚¨ãƒ©ãƒ¼å‡ºåŠ›ãƒ•ã‚¡ã‚¤ãƒ«ã®è¨­å®š
 				if ((suInfo_.dwFlags & STARTF_USESTDHANDLES) == 0 &&
 					(si.get().dwFlags & STARTF_USESTDHANDLES) != 0)
 					myInput_ = si.myInput_,
@@ -596,7 +596,7 @@ namespace wawl {
 				suInfo_.dwFlags |= si.get().dwFlags;
 			}
 
-			//“à•”‚Ì’l‚ğæ“¾
+			//å†…éƒ¨ã®å€¤ã‚’å–å¾—
 			auto& get() {
 				return suInfo_;
 			}
@@ -611,14 +611,14 @@ namespace wawl {
 			}
 
 		private:
-			//–{‘Ì
+			//æœ¬ä½“
 			::STARTUPINFO suInfo_;
-			//©•ª‚Ìˆê•”‚Ìƒƒ“ƒo‚ğ•Û
+			//è‡ªåˆ†ã®ä¸€éƒ¨ã®ãƒ¡ãƒ³ãƒã‚’ä¿æŒ
 			TString myDesktopName_, myTitle_;
 			File myInput_{}, myOutput_{}, myError_{};
 		};
 
-		//ƒvƒƒZƒXî•ñ
+		//ãƒ—ãƒ­ã‚»ã‚¹æƒ…å ±
 		struct ProcInfo {
 			Handle procHandle = 0, threadHandle = 0;
 			Dword procId = 0, threadId = 0;
@@ -642,7 +642,7 @@ namespace wawl {
 
 		};
 
-		//ƒvƒƒZƒX¶¬‹K’è
+		//ãƒ—ãƒ­ã‚»ã‚¹ç”Ÿæˆè¦å®š
 		enum class ProcCreateProv : Dword {
 			NotInheritJob = CREATE_BREAKAWAY_FROM_JOB,
 			NotInheritErrorMode = CREATE_DEFAULT_ERROR_MODE,
@@ -759,15 +759,15 @@ namespace wawl {
 			}
 
 		private:
-			//ƒvƒƒZƒXó‹µ
+			//ãƒ—ãƒ­ã‚»ã‚¹çŠ¶æ³
 			std::shared_ptr<ProcInfo> procInfo_ = nullptr;
-			//ˆê•”ˆø”‚Ì•Û‘¶
+			//ä¸€éƒ¨å¼•æ•°ã®ä¿å­˜
 			std::shared_ptr<SecurityAttrib> myProcAttrib_ = nullptr, myThreadAttrib_ = nullptr;
 			std::shared_ptr<StartupInfo> myStartupInfo_ = nullptr;
-			//ƒGƒ‰[ƒR[ƒh
+			//ã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰
 			Error error_ = Error(0);
 
-			//ªŒ¹ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+			//æ ¹æºã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 			Process(
 				const TString* appName,
 				const TString* cmdLineArgs,
@@ -821,7 +821,7 @@ namespace wawl {
 
 		//test code
 
-		//ƒtƒ@ƒCƒ‹ƒ^ƒCƒ€
+		//ãƒ•ã‚¡ã‚¤ãƒ«ã‚¿ã‚¤ãƒ 
 		class FileTime {
 		public:
 			FileTime() = default;
@@ -881,7 +881,7 @@ namespace wawl {
 			} week_;
 		};
 
-		//INIƒtƒ@ƒCƒ‹
+		//INIãƒ•ã‚¡ã‚¤ãƒ«
 		class IniFile {
 		public:
 			IniFile() = default;

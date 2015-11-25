@@ -1,36 +1,36 @@
 # wawl
 #### WinAPI C++ Wrapper Library
-WinAPI��C++�Ŕ��߂Ƀ��b�v�������C�u�����ł��B  
-�w�b�_�[�I�����[�ł��̂œK���Ɏg���Ă��������B  
-msvc2015�œ���m�F�ς݂ł��B
+WinAPIをC++でラップしたライブラリです。  
+ヘッダーオンリーですので適当に使ってください。  
+msvc2015で動作確認済みです。
 
-##### ���C�Z���X
-wawl��NYSL Version 0.9982�̂��ƂŌ��J����܂��B  
-NYSL�̏ڍׂɊւ��Ă�<http://www.kmonos.net/nysl/>���Q�Ƃ��Ă��������B  
-�ꉞ���p
+##### ライセンス
+wawlはNYSL Version 0.9982のもとで公開されます。  
+NYSLの詳細に関しては<http://www.kmonos.net/nysl/>を参照してください。  
+一応引用
 > * A.
-> �{�\�t�g�E�F�A�� Everyone'sWare �ł��B���̃\�t�g����ɂ�����l��l���A�������̍�������̂������̂Ɠ����悤�ɁA���R�ɗ��p���邱�Ƃ��o���܂��B
+> 本ソフトウェアは Everyone'sWare です。このソフトを手にした一人一人が、ご自分の作ったものを扱うのと同じように、自由に利用することが出来ます。
 
 > * A-1.
-> �t���[�E�F�A�ł��B��҂���͎g�p������v�����܂���B
+> フリーウェアです。作者からは使用料等を要求しません。
 
 > * A-2.
-> �L��������}�̂̔@�����킸�A���R�ɓ]�ځE�Ĕz�z�ł��܂��B
+> 有料無料や媒体の如何を問わず、自由に転載・再配布できます。
 
 > * A-3.
-> �����Ȃ��ނ� ���ρE���v���O�����ł̗��p ���s���Ă��\���܂���B
+> いかなる種類の 改変・他プログラムでの利用 を行っても構いません。
 > * A-4.
-> �ύX�������̂╔���I�Ɏg�p�������̂́A���Ȃ��̂��̂ɂȂ�܂��B���J����ꍇ�́A���Ȃ��̖��O�̉��ōs���ĉ������B
+> 変更したものや部分的に使用したものは、あなたのものになります。公開する場合は、あなたの名前の下で行って下さい。
 
 > * B.
-> ���̃\�t�g�𗘗p���邱�Ƃɂ���Đ��������Q���ɂ��āA��҂͐ӔC�𕉂�Ȃ����̂Ƃ��܂��B�e���̐ӔC�ɂ����Ă����p�������B
+> このソフトを利用することによって生じた損害等について、作者は責任を負わないものとします。各自の責任においてご利用下さい。
 
 > * C.
-> ����Ґl�i���͍�҂ł���azaika�ɋA�����܂��B���쌠�͕������܂��B
+> 著作者人格権は作者であるazaikaに帰属します。著作権は放棄します。
 
 > * D.
-> �ȏ�̂R���́A�\�[�X�E���s�o�C�i���̑o���ɓK�p����܂��B
+> 以上の３項は、ソース・実行バイナリの双方に適用されます。
 
 - - -
 
-���̃��C�u�����Ɋւ���A����[���twitter](http://www.twitter.com/azaika_)�܂ł��肢���܂��B
+このライブラリに関する連絡は[作者twitter](http://www.twitter.com/azaika_)までお願いします。

@@ -13,7 +13,7 @@
 //wawl based Header
 #include "BaseType.h"
 
-//ƒ†[ƒU[’è‹`Main
+//ãƒ¦ãƒ¼ã‚¶ãƒ¼å®šç¾©Main
 void wawlMain();
 
 namespace wawl {
@@ -21,50 +21,54 @@ namespace wawl {
 
 		using AppHandle = HINSTANCE;
 
-		//‚±‚ÌƒAƒvƒŠ‚ÌAppHandle‚ğæ“¾
+		//ã“ã®ã‚¢ãƒ—ãƒªã®AppHandleã‚’å–å¾—
 		inline AppHandle getAppHandle() {
 			return static_cast<::HINSTANCE>(::GetModuleHandle(0));
 		}
 
-		//Š®‘S‚ÈƒRƒ}ƒ“ƒhƒ‰ƒCƒ“ˆø”‚ğæ“¾
+		//å®Œå…¨ãªã‚³ãƒãƒ³ãƒ‰ãƒ©ã‚¤ãƒ³å¼•æ•°ã‚’å–å¾—
 		inline TString getFullCmdArgs() {
 			return ::GetCommandLine();
 		}
 
-		//ƒVƒXƒeƒ€ƒNƒƒbƒN‚ğƒ~ƒŠ•b’PˆÊ‚Åæ“¾
+		//ã‚·ã‚¹ãƒ†ãƒ ã‚¯ãƒ­ãƒƒã‚¯ã‚’ãƒŸãƒªç§’å˜ä½ã§å–å¾—
 		inline std::size_t getTimeMilisec() {
 			return static_cast<std::size_t>(timeGetTime());
 		}
-
+		
+		//Exitã®ç¨®é¡
 		enum class ExitMode : unsigned int {
 			Logoff = EWX_LOGOFF,
 			Poweroff = EWX_POWEROFF,
 			Reboot = EWX_REBOOT,
 			Shutdown = EWX_SHUTDOWN
 		};
-		inline bool Exit(const ExitMode mode) {
+		
+		inline bool Exit(ExitMode mode) {
 			return ::ExitWindowsEx(
 				static_cast<unsigned int>(mode),
 				0
 				) != 0;
 		}
-		inline bool Exit(const ExitMode mode, bool doWaitHang) {
+		inline bool Exit(ExitMode mode, bool doWaitHang) {
 			return ::ExitWindowsEx(
 				static_cast<unsigned int>(mode) |
 				(doWaitHang ? EWX_FORCEIFHUNG : EWX_FORCE),
 				0
 				) != 0;
 		}
-
-		inline bool StartShutdown(const TString& machineName, const TString& msg, Dword timeOut = 0, Bool isForce = false, Bool doRestart = false) {
+		
+		//ã‚³ãƒ³ãƒ”ãƒ¥ãƒ¼ã‚¿ãƒ¼ã‚’ã‚·ãƒ£ãƒƒãƒˆãƒ€ã‚¦ãƒ³ã—ã¾ã™
+		inline bool StartShutdown(const TString& machineName, const TString& msg, Dword timeOut = 0, Bool force = false, Bool doRestart = false) {
 			return ::InitiateSystemShutdown(
 				const_cast<TChar*>(machineName.c_str()),
 				const_cast<TChar*>(msg.c_str()),
 				timeOut,
-				isForce,
+				force,
 				doRestart
 				) != 0;
 		}
+		//StartShutDownã§timeOutãŒè¨­å®šã•ã‚Œã¦ã„ãŸå ´åˆã€ãã®æ™‚é–“ä»¥å†…ãªã‚‰ã‚·ãƒ£ãƒƒãƒˆãƒ€ã‚¦ãƒ³ã‚’ä¸­æ­¢ã—ã¾ã™ã€‚
 		inline bool AbortShutdown(const TString& machineName) {
 			return ::AbortSystemShutdown(const_cast<TChar*>(machineName.c_str())) != 0;
 		}
@@ -77,21 +81,20 @@ namespace wawl {
 			void operator = (const _impl_System&) = delete;
 			void operator = (_impl_System&&) = delete;
 
-			//ƒRƒ}ƒ“ƒhƒ‰ƒCƒ“ˆø”‚ğæ“¾
+			//ã‚³ãƒãƒ³ãƒ‰ãƒ©ã‚¤ãƒ³å¼•æ•°ã‚’å–å¾—
 			friend const TString& getCmdArgs();
 
 			friend int getWndShowmode();
 
-			//ƒVƒXƒeƒ€‚Ìƒ^ƒCƒ}[•ª‰ğ”\‚ğ•ÏXB•K‚¸I‚í‚Á‚½‚ ‚ÆResetTimeResolution()‚ğŒÄ‚Ño‚·
+			//ã‚·ã‚¹ãƒ†ãƒ ã®ã‚¿ã‚¤ãƒãƒ¼åˆ†è§£èƒ½ã‚’å¤‰æ›´ã€‚å¿…ãšçµ‚ã‚ã£ãŸã‚ã¨ResetTimeResolution()ã‚’å‘¼ã³å‡ºã™
 			friend bool changeTimeRes(unsigned int res);
-			//ƒVƒXƒeƒ€‚Ìƒ^ƒCƒ}[•ª‰ğ”\‚ğŒ³‚É–ß‚·
+			//ã‚·ã‚¹ãƒ†ãƒ ã®ã‚¿ã‚¤ãƒãƒ¼åˆ†è§£èƒ½ã‚’å…ƒã«æˆ»ã™
 			friend bool resetTimeRes();
 
 			static void setWinMainArgs(const TString& cmdLine, int cmdShow) {
-				//‰‰ñŒÄ‚Ño‚µ‚©‚Ç‚¤‚©
+				//åˆå›å‘¼ã³å‡ºã—ã®æ™‚ã®ã¿ç™»éŒ²
 				static bool isFirst = true;
-
-				if (isFirst) { //‰‰ñŒÄ‚Ño‚µ‚È‚ç‚Î
+				if (isFirst) {
 					isFirst = false;
 					cmdArgStr_ = cmdLine;
 					windowShowmode_ = cmdShow;
@@ -99,12 +102,12 @@ namespace wawl {
 			}
 
 		private:
-			//ƒRƒ}ƒ“ƒhƒ‰ƒCƒ“ˆø”
+			//ã‚³ãƒãƒ³ãƒ‰ãƒ©ã‚¤ãƒ³å¼•æ•°
 			static TString cmdArgStr_;
-			//OS‚©‚ç“n‚³‚ê‚½Window‰Šú‰»
+			//OSã‹ã‚‰æ¸¡ã•ã‚ŒãŸWindowåˆæœŸåŒ–
 			static int windowShowmode_;
 
-			//ƒVƒXƒeƒ€ƒNƒƒbƒN•ÏX’l‚Ì•Û‘¶
+			//ã‚·ã‚¹ãƒ†ãƒ ã‚¯ãƒ­ãƒƒã‚¯å¤‰æ›´å€¤ã®ä¿å­˜
 			static int sysRes_;
 
 		};
