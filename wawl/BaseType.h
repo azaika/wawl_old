@@ -86,7 +86,7 @@ namespace wawl {
 	using Rectangle = Position;
 
 	//言語コード
-	//TODO : 追加
+	//TODO: 追加
 	enum class Lang : Dword {
 		UserDefault = LANG_USER_DEFAULT,
 		SysDefault = LANG_SYSTEM_DEFAULT,

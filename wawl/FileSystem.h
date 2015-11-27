@@ -203,33 +203,6 @@ namespace wawl {
 			File& operator = (File&&) = default;
 
 			File(
-				const TString* fileName,
-				const UnifyAccessDesc* accessDesc,
-				const UnifyFileSharePermit* shareMode,
-				const SecurityAttrib* secAttr,
-				const UnifyFileCreateProv* createProv,
-				const UnifyFileAttrib* fileAttr,
-				const File* baseFile
-				) {
-				if (secAttr != nullptr)
-					mySecAttr_ = std::make_shared<SecurityAttrib>(*secAttr);
-				file_ = std::shared_ptr<_impl_UnderHandle>(
-					::CreateFile(
-						(fileName == nullptr ? nullptr : fileName->c_str()),
-						(accessDesc == nullptr ? GENERIC_ALL : accessDesc->get()),
-						(shareMode == nullptr ? NULL : shareMode->get()),
-						(secAttr == nullptr ? nullptr : &(mySecAttr_->get())),
-						(createProv == nullptr ? CREATE_ALWAYS : createProv->get()),
-						(fileAttr == nullptr ? FILE_ATTRIBUTE_NORMAL : fileAttr->get()),
-						(baseFile == nullptr ? nullptr : baseFile->get())
-						),
-					[](::HANDLE h) { ::CloseHandle(h), delete h; }
-				);
-
-				if (file_.get() == INVALID_HANDLE_VALUE)
-					throw Error(::GetLastError());
-			}
-			File(
 				const TString& fileName,
 				const UnifyFileCreateProv& createProv
 				) :
@@ -307,19 +280,75 @@ namespace wawl {
 					&baseFile
 					) {}
 
+			bool open(
+				const TString& fileName,
+				const UnifyFileCreateProv& createProv
+				) {
+				*this = File(
+					&fileName,
+					nullptr,
+					nullptr,
+					nullptr,
+					&createProv,
+					nullptr,
+					nullptr
+					);
+
+				return file_ != nullptr;
+			}
+
+			//TODO: openのオーバーロード追加
+
+			void close() {
+				file_ = nullptr;
+			}
+
 			//内部の値を取得
 			FileHandle get() const {
-				return file_.get();
+				return *file_;
 			}
 			FileHandle operator () () const {
-				return file_.get();
+				return *file_;
 			}
 
 		private:
 			//本体
-			std::shared_ptr<_impl_UnderHandle> file_ = nullptr;
+			std::shared_ptr<FileHandle> file_ = nullptr;
 			//一部引数の保存
 			std::shared_ptr<SecurityAttrib> mySecAttr_ = nullptr;
+
+			//ルートコンストラクタ
+			File(
+				const TString* fileName,
+				const UnifyAccessDesc* accessDesc,
+				const UnifyFileSharePermit* shareMode,
+				const SecurityAttrib* secAttr,
+				const UnifyFileCreateProv* createProv,
+				const UnifyFileAttrib* fileAttr,
+				const File* baseFile
+				) {
+				if (secAttr != nullptr)
+					mySecAttr_ = std::make_shared<SecurityAttrib>(*secAttr);
+				file_ = std::shared_ptr<FileHandle>(
+					new FileHandle(
+					::CreateFile(
+					(fileName == nullptr ? nullptr : fileName->c_str()),
+					(accessDesc == nullptr ? GENERIC_ALL : accessDesc->get()),
+					(shareMode == nullptr ? NULL : shareMode->get()),
+					(secAttr == nullptr ? nullptr : &(mySecAttr_->get())),
+					(createProv == nullptr ? CREATE_ALWAYS : createProv->get()),
+					(fileAttr == nullptr ? FILE_ATTRIBUTE_NORMAL : fileAttr->get()),
+					(baseFile == nullptr ? nullptr : baseFile->get())
+					)),
+					[](::HANDLE* h) {
+						if (h != nullptr)
+							::CloseHandle(*h), delete h;
+					}
+				);
+
+				if (*file_ == INVALID_HANDLE_VALUE)
+					throw Error(::GetLastError());
+			}
 
 		};
 
@@ -636,7 +665,7 @@ namespace wawl {
 				threadHandle = pi.hThread;
 			}
 
-			explicit operator ::PROCESS_INFORMATION() {
+			operator ::PROCESS_INFORMATION() {
 				return *reinterpret_cast<PROCESS_INFORMATION*>(this);
 			}
 
@@ -669,8 +698,6 @@ namespace wawl {
 		class Process {
 		public:
 			Process() = default;
-			Process(const Process&) = default;
-			Process& operator = (const Process&) = default;
 			Process(Process&&) = default;
 			Process& operator = (Process&&) = default;
 
@@ -746,6 +773,39 @@ namespace wawl {
 					&startupInfo
 					) {}
 
+			void open(
+				const TString& cmdLine,
+				const StartupInfo& startupInfo
+				) {
+				Process proc(
+					cmdLine,
+					startupInfo
+					);
+				procInfo_ = ValType(proc.procInfo_.release(), releaseInfo);
+				procAttrib_ = std::unique_ptr<SecurityAttrib>(proc.procAttrib_.release());
+				threadAttrib_ = std::unique_ptr<SecurityAttrib>(proc.threadAttrib_.release());
+				startupInfo_ = std::unique_ptr<StartupInfo>(proc.startupInfo_.release());
+				error_ = proc.error_;
+			}
+
+			//TODO: openのオーバーロード追加
+
+			void release(unsigned int exitCode = 0) {
+				procInfo_.reset();
+			}
+
+			bool terminate(unsigned int exitCode = 0) {
+				if (procInfo_) {
+					bool isSuccess = ::TerminateProcess(procInfo_->procHandle, exitCode) != 0;
+
+					procInfo_.reset();
+
+					return isSuccess;
+				}
+
+				return false;
+			}
+
 			bool fail() {
 				return procInfo_ == nullptr;
 			}
@@ -758,16 +818,35 @@ namespace wawl {
 				return error_;
 			}
 
+			ProcInfo& get() {
+				return *procInfo_;
+			}
+			const ProcInfo& get() const {
+				return *procInfo_;
+			}
+			ProcInfo& operator() () {
+				return *procInfo_;
+			}
+			const ProcInfo& operator() () const {
+				return *procInfo_;
+			}
+
 		private:
-			//プロセス状況
-			std::shared_ptr<ProcInfo> procInfo_ = nullptr;
+			static void releaseInfo(ProcInfo* pi) {
+				::CloseHandle(pi->procHandle);
+				::CloseHandle(pi->threadHandle);
+			}
+			using ValType = std::unique_ptr<ProcInfo, decltype(&releaseInfo)>;
+
+			//プロセス情報
+			ValType procInfo_ = ValType(nullptr, releaseInfo);
 			//一部引数の保存
-			std::shared_ptr<SecurityAttrib> myProcAttrib_ = nullptr, myThreadAttrib_ = nullptr;
-			std::shared_ptr<StartupInfo> myStartupInfo_ = nullptr;
+			std::unique_ptr<SecurityAttrib> procAttrib_ = nullptr, threadAttrib_ = nullptr;
+			std::unique_ptr<StartupInfo> startupInfo_ = nullptr;
 			//エラーコード
 			Error error_ = Error(0);
 
-			//根源コンストラクタ
+			//ルートコンストラクタ
 			Process(
 				const TString* appName,
 				const TString* cmdLineArgs,
@@ -780,11 +859,11 @@ namespace wawl {
 				const StartupInfo* startupInfo
 				) {
 				if (procAttrib != nullptr)
-					myProcAttrib_ = std::make_shared<SecurityAttrib>(*procAttrib);
+					procAttrib_ = std::make_unique<SecurityAttrib>(*procAttrib);
 				if (threadAttrib != nullptr)
-					myThreadAttrib_ = std::make_shared<SecurityAttrib>(*threadAttrib);
+					threadAttrib_ = std::make_unique<SecurityAttrib>(*threadAttrib);
 				if (startupInfo != nullptr)
-					myStartupInfo_ = std::make_shared<StartupInfo>(*startupInfo);
+					startupInfo_ = std::make_unique<StartupInfo>(*startupInfo);
 
 				ProcInfo* tmpProcInfo = new ProcInfo();
 
@@ -792,27 +871,21 @@ namespace wawl {
 					::CreateProcess(
 						(appName == nullptr ? nullptr : appName->c_str()),
 						(cmdLineArgs == nullptr ? nullptr : const_cast<TChar*>(cmdLineArgs->c_str())),
-						(procAttrib == nullptr ? nullptr : &myProcAttrib_->get()),
-						(threadAttrib == nullptr ? nullptr : &myThreadAttrib_->get()),
+						(procAttrib == nullptr ? nullptr : &procAttrib_->get()),
+						(threadAttrib == nullptr ? nullptr : &threadAttrib_->get()),
 						doInheritHandle,
 						(createProv == nullptr ? NORMAL_PRIORITY_CLASS : createProv->get()),
 						(envVars == nullptr ? nullptr : reinterpret_cast<void*>(const_cast<TChar*>(envVars->c_str()))),
 						(currentDir == nullptr ? nullptr : currentDir->c_str()),
-						(startupInfo == nullptr ? nullptr : &myStartupInfo_->get()),
-						&static_cast<::PROCESS_INFORMATION>(*tmpProcInfo)
+						(startupInfo == nullptr ? nullptr : &startupInfo_->get()),
+						reinterpret_cast<::PROCESS_INFORMATION*>(tmpProcInfo)
 						) == 0
 					)
 					delete tmpProcInfo, error_ = Error(::GetLastError());
 				else {
-					procInfo_ = std::shared_ptr<ProcInfo>(
+					procInfo_ = ValType(
 						tmpProcInfo,
-						[](ProcInfo* pi) {
-							if (pi != nullptr) {
-								::CloseHandle(pi->procHandle);
-								::CloseHandle(pi->threadHandle);
-								delete pi;
-							}
-						}
+						releaseInfo
 					);
 				}
 			}
@@ -966,107 +1039,4 @@ namespace wawl {
 		//~test code
 
 	} //::wawl::fs
-
-	//Registry testcode
-	namespace reg {
-
-		enum class RegistryOption {
-			BackupRestore = REG_OPTION_BACKUP_RESTORE,
-			CreateLink = REG_OPTION_CREATE_LINK,
-			NonVolatile = REG_OPTION_NON_VOLATILE,
-			OpenLink = REG_OPTION_OPEN_LINK,
-			Reserved = REG_OPTION_RESERVED,
-			Volatile = REG_OPTION_VOLATILE,
-		};
-		using UnifyRegistryOption = _impl_UnifyEnum<RegistryOption>;
-
-		enum class RegistryKeyOption : unsigned int {
-			AllAccess = KEY_ALL_ACCESS,
-			CreateLink = KEY_CREATE_LINK,
-			CreateSubKey = KEY_CREATE_SUB_KEY,
-			EnamerateSubKey = KEY_ENUMERATE_SUB_KEYS,
-			Event = KEY_EVENT,
-			Execute = KEY_EXECUTE,
-			LengthMask = KEY_LENGTH_MASK,
-			Notify = KEY_NOTIFY,
-			QueryValue = KEY_QUERY_VALUE,
-			Read = KEY_READ,
-			SetValue = KEY_SET_VALUE,
-			Wow64_32 = KEY_WOW64_32KEY,
-			Wow64_64 = KEY_WOW64_64KEY,
-			Wow64Res = KEY_WOW64_RES,
-			Write = KEY_WRITE,
-		};
-		using UnifyKeyOption = _impl_UnifyEnum<RegistryKeyOption>;
-
-		enum class RegistryType {
-			Binary = REG_BINARY,
-			DWord = REG_DWORD,
-			ExpandString = REG_EXPAND_SZ,
-			MultiString = REG_MULTI_SZ,
-			QWord = REG_QWORD,
-			String = REG_SZ,
-		};
-		using UnifyRegistryType = _impl_UnifyEnum<RegistryType>;
-
-		class RegistryKey {
-		public:
-			RegistryKey(HKEY thisKey) {
-				hkey_ = thisKey;
-			}
-			RegistryKey(HKEY currentKey, const TString& name, const RegistryOption& regOp, const RegistryKeyOption& keyOp, const fs::SecurityAttrib& secAtt) {
-				DWORD DisPosition;
-				::RegCreateKeyEx(currentKey, name.c_str(), 0, L"", static_cast<unsigned int>(regOp), static_cast<unsigned int>(keyOp), (LPSECURITY_ATTRIBUTES)&secAtt.get(), &hkey_, &DisPosition);
-			}
-			~RegistryKey() {
-				RegCloseKey(hkey_);
-			}
-			void setValue(const TString& name, const TString& value) {
-				::RegSetValueEx(
-					hkey_,
-					name.c_str(),
-					0,
-					static_cast<UINT>(RegistryType::String),
-					reinterpret_cast<const Byte*>(value.c_str()),
-					static_cast<Dword>(value.size()*sizeof(TChar))
-					);
-			}
-			void setValue(const TString& name, const Dword& value) {
-				::RegSetValueEx(hkey_, name.c_str(), NULL, static_cast<UINT>(RegistryType::DWord), (const Byte*)&value, sizeof(Dword));
-			}
-			void setValue(const TString& name, const Qword& value) {
-				::RegSetValueEx(hkey_, name.c_str(), NULL, static_cast<UINT>(RegistryType::QWord), (const Byte*)&value, sizeof(Qword));
-			}
-			auto& getValue(const TString& name) {
-				Byte *data;
-				::RegQueryValueEx(hkey_, name.c_str(), NULL, NULL, data, NULL);
-				return data;
-			}
-			void deleteValue(const TString& name) {
-				RegDeleteValue(hkey_, name_.c_str());
-			}
-			RegistryKey getKey(const TString& name) {
-				::HKEY retHKey;
-				RegOpenKeyEx(hkey_, name.c_str(), NULL, NULL, &retHKey);
-				RegistryKey ret(retHKey);
-				return ret;
-			}
-
-		private:
-			::HKEY hkey_;
-			TString name_;
-			fs::SecurityDesc secDesc;
-			fs::FileTime fileTime_;
-			void getInfo() {
-				Dword numberOfSubKey;
-				Dword numberOfValues;
-				::RegQueryInfoKey(hkey_, (LPWSTR)name_.c_str(), NULL, NULL, &numberOfSubKey, NULL, NULL, &numberOfValues, NULL, NULL, NULL, &fileTime_());
-
-
-			}
-
-		};
-
-	} //::wawl::reg
-
 } //::wawl

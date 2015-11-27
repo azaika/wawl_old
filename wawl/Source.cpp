@@ -3,12 +3,15 @@
 #include "Utility.h"
 #include "FileSystem.h"
 #include "Window.h"
+#include "Registry.h"
 
 //色々usingする
 #include "Using.h"
 
 void wawlMain() {
 	wnd::RootWindow window;
+	fs::Process proc;
+
 	try {
 		window = wnd::RootWindow(
 			L"Kitty on your lap",
@@ -32,20 +35,29 @@ void wawlMain() {
 			mb::show(L"KeyX pushed", L"Input successed", mb::Button::OK);
 		//ini生成のテスト
 		else if (kb::getState(KeyCode::I)) {
-			fs::IniFile aaa(L"./test.ini");
-			aaa.write(L"Section", L"Key", L"Data");
+			fs::IniFile test(L"./test.ini");
+			test.write(L"Section", L"Key", L"Data");
 		}
 		//マウス操作のテスト
 		else if (kb::getState(KeyCode::One))
 			mc::setPos({ 100, 100 });
 		//他アプリケーション起動のテスト
 		else if (kb::getState(KeyCode::Two)) {
-			fs::Process proc(L"notepad.exe", fs::StartupInfo{});
-			if(!proc)
-				mb::show(L"Error", proc.getError().msg(), mb::Button::OK);
+			if (!proc) {
+				proc.open(L"notepad.exe", fs::StartupInfo{});
+
+				if (!proc)
+					mb::show(L"Error", proc.getError().msg(), mb::Button::OK);
+			}
+		}
+		else if (kb::getState(KeyCode::C)) {
+			if (proc)
+				proc.terminate();
 		}
 		else if (kb::getState(KeyCode::W))
 			window.setShowMode();
+		else if (kb::getState(KeyCode::S))
+			kb::sendEvent(KeyCode::One);
 
 		if (window.isAlive()) {
 			if (kb::getState(KeyCode::R))
