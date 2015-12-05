@@ -2,8 +2,11 @@
 
 #define WAWL_ENABLE_MENU
 
+//wawl Header
 #include "System.h"
+#include "BaseType.h"
 #include "Utility.h"
+//C++ STL
 #include <memory>
 
 namespace wawl {
@@ -125,7 +128,6 @@ namespace wawl {
 			RightJustify = MFT_RIGHTJUSTIFY,
 			RightOrder = MFT_RIGHTORDER
 		};
-		using UnifyMenuOption = _impl_UnifyEnum<MenuOption>;
 		
 		enum class MenuState : unsigned int {
 			Clear = 0,
@@ -134,7 +136,6 @@ namespace wawl {
 			Disable = MFS_DISABLED,
 			Hilite = MFS_HILITE
 		};
-		using UnifyMenuState = _impl_UnifyEnum<MenuState>;
 		
 		//デフォルトで用意されているMenu用Bitmap
 		enum class MenuBarBitmap : UintPtr {
@@ -395,8 +396,8 @@ namespace wawl {
 					) {}
 			MenuString(
 				const TString& str,
-				const UnifyMenuOption& options,
-				const UnifyMenuState& states
+				const UnifyEnum<MenuOption>& options,
+				const UnifyEnum<MenuState>& states
 				) :
 				MenuString(
 					&str,
@@ -422,8 +423,8 @@ namespace wawl {
 					) {}
 			MenuString(
 				const TString& str,
-				const UnifyMenuOption& options,
-				const UnifyMenuState& states,
+				const UnifyEnum<MenuOption>& options,
+				const UnifyEnum<MenuState>& states,
 				const PopupMenu& subMenu
 				) :
 				MenuString(
@@ -437,8 +438,8 @@ namespace wawl {
 					) {}
 			MenuString(
 				const TString& str,
-				const UnifyMenuOption& options,
-				const UnifyMenuState& states,
+				const UnifyEnum<MenuOption>& options,
+				const UnifyEnum<MenuState>& states,
 				const MenuBitmap& menuBmp
 				) :
 				MenuString(
@@ -475,8 +476,8 @@ namespace wawl {
 			//ルートコンストラクタ
 			MenuString(
 				const TString* str,
-				const UnifyMenuOption* options,
-				const UnifyMenuState* states,
+				const UnifyEnum<MenuOption>* options,
+				const UnifyEnum<MenuState>* states,
 				const MenuBitmap* menuBmp,
 				const Bitmap* checkMark,
 				const Bitmap* uncheckMark,

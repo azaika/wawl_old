@@ -2,9 +2,11 @@
 
 #define WAWL_ENABLE_WINDOW
 
+//wawl Header
 #include "System.h"
-#include "Utility.h"
 #include "Menu.h"
+#include "Utility.h"
+//C++ STL
 #include <unordered_map>
 #include <functional>
 
@@ -25,7 +27,6 @@ namespace wawl {
 			SaveBitmap = CS_SAVEBITS,
 			DropShadow = CS_DROPSHADOW
 		};
-		using UnifyPropOption = _impl_UnifyEnum<PropOption>;
 
 		enum class DefaultIcon : UintPtr {
 			App = reinterpret_cast<UintPtr>(IDI_APPLICATION),
@@ -275,6 +276,8 @@ namespace wawl {
 			Create = WM_CREATE,
 			Timer = WM_TIMER,
 			Destroy = WM_DESTROY,
+			LClick = WM_LBUTTONDOWN,
+			RClick = WM_RBUTTONDOWN
 		};
 
 		/*enum class DefaultProp : UintPtr {
@@ -300,7 +303,7 @@ namespace wawl {
 
 			Prop() :
 				Prop(
-					UnifyPropOption({PropOption::HRedraw, PropOption::VRedraw}),
+					{PropOption::HRedraw, PropOption::VRedraw},
 					DefaultIcon::App,
 					DefaultIcon::App,
 					DefaultCursor::Arrow,
@@ -310,7 +313,7 @@ namespace wawl {
 				const TString& menuName
 				) :
 				Prop(
-					UnifyPropOption({ PropOption::HRedraw, PropOption::VRedraw }),
+					{ PropOption::HRedraw, PropOption::VRedraw },
 					DefaultIcon::App,
 					DefaultIcon::App,
 					DefaultCursor::Arrow,
@@ -318,7 +321,7 @@ namespace wawl {
 					menuName
 					) {}
 			Prop(
-				const UnifyPropOption& options
+				const UnifyEnum<PropOption>& options
 				) :
 				Prop(
 					options,
@@ -328,7 +331,7 @@ namespace wawl {
 					Color::Hollow
 					) {}
 			Prop(
-				const UnifyPropOption& options,
+				const UnifyEnum<PropOption>& options,
 				const Icon& icon,
 				const Icon& smallIcon,
 				const Cursor& cursor,
@@ -343,7 +346,7 @@ namespace wawl {
 					nullptr
 					) {}
 			Prop(
-				const UnifyPropOption& options,
+				const UnifyEnum<PropOption>& options,
 				const Icon& icon,
 				const Icon& smallIcon,
 				const Cursor& cursor,
@@ -375,7 +378,7 @@ namespace wawl {
 
 			//ルートコンストラクタ
 			Prop(
-				const UnifyPropOption* options,
+				const UnifyEnum<PropOption>* options,
 				const Icon* icon,
 				const Icon* smallIcon,
 				const Cursor* cursor,
@@ -437,7 +440,6 @@ namespace wawl {
 			AcceptTab = WS_TABSTOP,
 			Visible = WS_VISIBLE
 		};
-		using UnifyStyle = _impl_UnifyEnum<Style>;
 
 		//拡張Windowスタイル
 		enum class ExtStyle : Dword {
@@ -463,13 +465,12 @@ namespace wawl {
 			TopMost = WS_EX_TOPMOST,
 			Transparent = WS_EX_TRANSPARENT
 		};
-		using UnifyExtStyle = _impl_UnifyEnum<ExtStyle>;
 
 		using ShowMode = WndShowMode;
 
 		class Window {
 		public:
-			using ProcType = std::function<int(UintPtr, IntPtr)>;
+			using ProcType = std::function<LongPtr(UintPtr, IntPtr)>;
 
 			Window& operator = (const Window&) = delete;
 
@@ -553,6 +554,15 @@ namespace wawl {
 					) != 0;
 			}
 
+			//WindowStyleを取得
+			UnifyEnum<Style> getStyle() const {
+				return UnifyEnum<Style>(::GetWindowLong(hwnd_, GWL_STYLE));
+			}
+			//WindowStyleを設定
+			auto setStyle(const UnifyEnum<Style>& newStyle) {
+				::SetWindowLong(hwnd_, GWL_STYLE, newStyle());
+			}
+
 			Position toScreenPos(const Position& clientPos) {
 				LPPOINT posBuf;
 				posBuf->x = clientPos.x;
@@ -572,6 +582,10 @@ namespace wawl {
 					throw Error(::GetLastError());
 
 				return Position(posBuf->x, posBuf->y);
+			}
+
+			LongPtr defaultProc(Msg msg, UintPtr lp, IntPtr rp) {
+				return ::DefWindowProc(hwnd_, util::unpackEnum(msg), lp, rp);
 			}
 
 			::HWND get() const {
@@ -633,7 +647,7 @@ namespace wawl {
 				hwnd_ = std::move(rw.hwnd_);
 				msgProcs_ = std::move(rw.msgProcs_);
 
-				winRefs_[rw.hwnd_] = static_cast<Window*>(this);
+				winRefs_[hwnd_] = static_cast<Window*>(this);
 			}
 			RootWindow& operator = (RootWindow&& rw) {
 				hwnd_ = std::move(rw.hwnd_);
@@ -665,7 +679,7 @@ namespace wawl {
 				const TString& titleName,
 				const Prop& prop,
 				const Rectangle& wndSize,
-				const UnifyStyle& styles
+				const UnifyEnum<Style>& styles
 				) :
 				RootWindow(
 					titleName,
@@ -684,8 +698,8 @@ namespace wawl {
 				const Prop& prop,
 				const Rectangle& wndSize,
 				const Position& pos,
-				const UnifyStyle& styles,
-				const UnifyExtStyle& extStyles,
+				const UnifyEnum<Style>& styles,
+				const UnifyEnum<ExtStyle>& extStyles,
 				const Menu& menu
 				) : 
 				RootWindow (
@@ -698,25 +712,26 @@ namespace wawl {
 					&menu
 					) {}
 
-			RootWindow& addMsgProc(const Msg msg, const ProcType& proc) {
+			auto& on(const Msg msg, const ProcType& proc) {
 				msgProcs_.insert(std::make_pair(util::unpackEnum(msg), proc));
 
 				return *this;
 			}
-			RootWindow& removeMsgProc(const Msg msg) {
+			auto& off(const Msg msg) {
 				msgProcs_.erase(util::unpackEnum(msg));
 
 				return *this;
 			}
 
 		private:
+			//ルートコンストラクタ
 			RootWindow(
 				const TString& titleName,
 				const Prop& prop,
 				const Rectangle& wndSize,
 				const Position* pos,
-				const UnifyStyle* styles,
-				const UnifyExtStyle* extStyles,
+				const UnifyEnum<Style>* styles,
+				const UnifyEnum<ExtStyle>* extStyles,
 				const Menu* menu
 				) {
 				creater_ = static_cast<Window*>(this);
@@ -763,14 +778,12 @@ namespace wawl {
 				Question = MB_ICONQUESTION,
 				Stop = MB_ICONSTOP
 			};
-			using UnifyIcon = _impl_UnifyEnum<Icon>;
 			//showMessage表示中の他のWindow操作規制
 			enum class CtrlRegLevel : unsigned int {
 				App = MB_APPLMODAL,
 				System = MB_SYSTEMMODAL,
 				Task = MB_TASKMODAL
 			};
-			using UnifyCtrlRegLevel = _impl_UnifyEnum<CtrlRegLevel>;
 			//showMessageの表示形式
 			enum class Style : unsigned int {
 				OnlyDefaultDesktop = MB_DEFAULT_DESKTOP_ONLY,
@@ -781,7 +794,6 @@ namespace wawl {
 				Notification = MB_SERVICE_NOTIFICATION,
 				NotificationOnNT351 = MB_SERVICE_NOTIFICATION_NT3X
 			};
-			using UnifyStyle = _impl_UnifyEnum<Style>;
 			//showMessageの返り値
 			enum class Result : int {
 				Abort = IDABORT,

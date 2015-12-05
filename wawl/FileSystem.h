@@ -108,7 +108,6 @@ namespace wawl {
 			Red = BACKGROUND_RED,
 			Intensity = BACKGROUND_INTENSITY
 		};
-		using UnifyConsoleColor = _impl_UnifyEnum < ConsoleColor >;
 
 		//アプリケーション起動時のオプション
 		enum class StartupOption : Dword {
@@ -119,7 +118,6 @@ namespace wawl {
 			RelateTitleWithAppID = STARTF_TITLEISAPPID,
 			RelateTitleWithLnk = STARTF_TITLEISLINKNAME
 		};
-		using UnifyStartupOption = _impl_UnifyEnum < StartupOption >;
 
 		//アクセス指定子
 		enum class AccessDesc : Dword {
@@ -139,7 +137,6 @@ namespace wawl {
 			AllowMaximum = MAXIMUM_ALLOWED,
 			RightAllSpecificDesc = SPECIFIC_RIGHTS_ALL
 		};
-		using UnifyAccessDesc = _impl_UnifyEnum < AccessDesc >;
 
 		//ファイルシェア形式
 		enum class FileSharePermit : Dword {
@@ -148,7 +145,6 @@ namespace wawl {
 			Read = FILE_SHARE_READ,
 			Write = FILE_SHARE_WRITE
 		};
-		using UnifyFileSharePermit = _impl_UnifyEnum < FileSharePermit >;
 
 		//ファイル生成規定
 		enum class FileCreateProv : Dword {
@@ -158,7 +154,6 @@ namespace wawl {
 			AlwaysOpen = OPEN_ALWAYS,
 			ClearExisting = TRUNCATE_EXISTING
 		};
-		using UnifyFileCreateProv = _impl_UnifyEnum < FileCreateProv >;
 
 		//ファイルの属性記述子
 		enum class FileAttrib : Dword {
@@ -191,7 +186,6 @@ namespace wawl {
 			EffectiveOnly = SECURITY_EFFECTIVE_ONLY,
 			EnableSecurityCamouflage = SECURITY_SQOS_PRESENT
 		};
-		using UnifyFileAttrib = _impl_UnifyEnum < FileAttrib >;
 
 		//ファイル
 		class File {
@@ -204,7 +198,7 @@ namespace wawl {
 
 			File(
 				const TString& fileName,
-				const UnifyFileCreateProv& createProv
+				const UnifyEnum<FileCreateProv>& createProv
 				) :
 				File(
 					&fileName,
@@ -217,7 +211,7 @@ namespace wawl {
 					) {}
 			File(
 				const TString& fileName,
-				const UnifyFileCreateProv& createProv,
+				const UnifyEnum<FileCreateProv>& createProv,
 				const File& baseFile
 				) :
 				File(
@@ -231,9 +225,9 @@ namespace wawl {
 					) {}
 			File(
 				const TString& fileName,
-				const UnifyAccessDesc& accessDesc,
-				const UnifyFileSharePermit& shareMode,
-				const UnifyFileCreateProv& createProv
+				const UnifyEnum<AccessDesc>& accessDesc,
+				const UnifyEnum<FileSharePermit>& shareMode,
+				const UnifyEnum<FileCreateProv>& createProv
 				) :
 				File(
 					&fileName,
@@ -246,11 +240,11 @@ namespace wawl {
 					) {}
 			File(
 				const TString& fileName,
-				const UnifyAccessDesc& accessDesc,
-				const UnifyFileSharePermit& shareMode,
+				const UnifyEnum<AccessDesc>& accessDesc,
+				const UnifyEnum<FileSharePermit>& shareMode,
 				const SecurityAttrib& secAttr,
-				const UnifyFileCreateProv& createProv,
-				const UnifyFileAttrib& fileAttr
+				const UnifyEnum<FileCreateProv>& createProv,
+				const UnifyEnum<FileAttrib>& fileAttr
 				) :
 				File(
 					&fileName,
@@ -263,11 +257,11 @@ namespace wawl {
 					) {}
 			File(
 				const TString& fileName,
-				const UnifyAccessDesc& accessDesc,
-				const UnifyFileSharePermit& shareMode,
+				const UnifyEnum<AccessDesc>& accessDesc,
+				const UnifyEnum<FileSharePermit>& shareMode,
 				const SecurityAttrib& secAttr,
-				const UnifyFileCreateProv& createProv,
-				const UnifyFileAttrib& fileAttr,
+				const UnifyEnum<FileCreateProv>& createProv,
+				const UnifyEnum<FileAttrib>& fileAttr,
 				const File& baseFile
 				) :
 				File(
@@ -282,7 +276,7 @@ namespace wawl {
 
 			bool open(
 				const TString& fileName,
-				const UnifyFileCreateProv& createProv
+				const UnifyEnum<FileCreateProv>& createProv
 				) {
 				*this = File(
 					&fileName,
@@ -320,11 +314,11 @@ namespace wawl {
 			//ルートコンストラクタ
 			File(
 				const TString* fileName,
-				const UnifyAccessDesc* accessDesc,
-				const UnifyFileSharePermit* shareMode,
+				const UnifyEnum<AccessDesc>* accessDesc,
+				const UnifyEnum<FileSharePermit>* shareMode,
 				const SecurityAttrib* secAttr,
-				const UnifyFileCreateProv* createProv,
-				const UnifyFileAttrib* fileAttr,
+				const UnifyEnum<FileCreateProv>* createProv,
+				const UnifyEnum<FileAttrib>* fileAttr,
 				const File* baseFile
 				) {
 				if (secAttr != nullptr)
@@ -354,81 +348,27 @@ namespace wawl {
 
 		//アプリケーション起動のための情報
 		class StartupInfo {
-			friend StartupInfo;
 		public:
 			StartupInfo(const StartupInfo&) = default;
 			StartupInfo(StartupInfo&&) = default;
 			StartupInfo& operator = (const StartupInfo&) = default;
 			StartupInfo& operator = (StartupInfo&&) = default;
 
-			StartupInfo(
-				const TString* desktopName = nullptr,
-				const TString* wndTitle = nullptr,
-				const Position* wndPos = nullptr,
-				const Rectangle* wndSize = nullptr,
-				const Rectangle* consoleBuf = nullptr,
-				const UnifyConsoleColor* consoleStrColors = nullptr,
-				const UnifyConsoleColor* consoleBgColors = nullptr,
-				const UnifyStartupOption* startupOptions = nullptr,
-				const UnifyWndShowMode* wndShowModes = nullptr,
-				const File* stdInput = nullptr,
-				const File* stdOutput = nullptr,
-				const File* stdError = nullptr
-				) {
-				::ZeroMemory(&suInfo_, sizeof(suInfo_));
-
-				//サイズ設定
-				suInfo_.cb = sizeof(::STARTUPINFO);
-				//デスクトップ名指定
-				if (desktopName != nullptr)
-					myDesktopName_ = *desktopName,
-					suInfo_.lpDesktop = const_cast<TChar*>(myDesktopName_.c_str());
-				//Windowのタイトル指定
-				if (wndTitle != nullptr)
-					myTitle_ = *wndTitle,
-					suInfo_.lpTitle = const_cast<TChar*>(myTitle_.c_str());
-				//Windowの座標設定
-				if (wndPos != nullptr)
-					suInfo_.dwFlags |= STARTF_USEPOSITION,
-					suInfo_.dwX = wndPos->x,
-					suInfo_.dwY = wndPos->y;
-				//Windowの大きさ設定
-				if (wndSize != nullptr)
-					suInfo_.dwFlags |= STARTF_USESIZE,
-					suInfo_.dwXSize = wndSize->x,
-					suInfo_.dwYSize = wndSize->y;
-				//Consoleのバッファーの大きさ設定
-				if (consoleBuf != nullptr)
-					suInfo_.dwFlags |= STARTF_USECOUNTCHARS,
-					suInfo_.dwXCountChars = consoleBuf->x,
-					suInfo_.dwYCountChars = consoleBuf->y;
-				//Consoleの文字色、背景色設定
-				if (consoleStrColors != nullptr)
-					suInfo_.dwFlags |= STARTF_USEFILLATTRIBUTE,
-					suInfo_.dwFillAttribute |= consoleStrColors->get();
-				if (consoleBgColors != nullptr)
-					suInfo_.dwFlags |= STARTF_USEFILLATTRIBUTE,
-					suInfo_.dwFillAttribute |= consoleBgColors->get();
-				if (startupOptions != nullptr)
-					suInfo_.dwFlags |= startupOptions->get();
-				//Window表示形式の設定
-				if (wndShowModes != nullptr)
-					suInfo_.dwFlags |= STARTF_USESHOWWINDOW,
-					suInfo_.wShowWindow = wndShowModes->get();
-				//標準入力、出力、エラー出力ファイルの設定
-				if (stdInput != nullptr)
-					myInput_ = *stdInput,
-					suInfo_.dwFlags |= STARTF_USESTDHANDLES,
-					suInfo_.hStdInput = myInput_.get();
-				if (stdOutput != nullptr)
-					myOutput_ = *stdOutput,
-					suInfo_.dwFlags |= STARTF_USESTDHANDLES,
-					suInfo_.hStdOutput = myOutput_.get();
-				if (stdError != nullptr)
-					myError_ = *stdError,
-					suInfo_.dwFlags |= STARTF_USESTDHANDLES,
-					suInfo_.hStdError = myError_.get();
-			}
+			StartupInfo() :
+				StartupInfo(
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr
+				) {}
 			StartupInfo(
 				const Position& wndPos
 				) :
@@ -465,8 +405,8 @@ namespace wawl {
 					nullptr
 					) {}
 			StartupInfo(
-				const UnifyStartupOption& startupOptions,
-				const UnifyWndShowMode& wndShowModes
+				const UnifyEnum<StartupOption>& startupOptions,
+				const UnifyEnum<WndShowMode>& wndShowModes
 				) :
 				StartupInfo(
 					nullptr,
@@ -484,8 +424,8 @@ namespace wawl {
 					) {}
 			StartupInfo(
 				const Rectangle& consoleBuf,
-				const UnifyConsoleColor& consoleStrColors,
-				const UnifyConsoleColor& consoleBgColors
+				const UnifyEnum<ConsoleColor>& consoleStrColors,
+				const UnifyEnum<ConsoleColor>& consoleBgColors
 				) :
 				StartupInfo(
 					nullptr,
@@ -522,8 +462,8 @@ namespace wawl {
 					) {}
 			StartupInfo(
 				const Rectangle& consoleBuf,
-				const UnifyConsoleColor& consoleStrColors,
-				const UnifyConsoleColor& consoleBgColors,
+				const UnifyEnum<ConsoleColor>& consoleStrColors,
+				const UnifyEnum<ConsoleColor>& consoleBgColors,
 				const File& stdInput,
 				const File& stdOutput,
 				const File& stdError
@@ -548,10 +488,10 @@ namespace wawl {
 				const Position& wndPos,
 				const Rectangle& wndSize,
 				const Rectangle& consoleBuf,
-				const UnifyConsoleColor& consoleStrColors,
-				const UnifyConsoleColor& consoleBgColors,
-				const UnifyStartupOption& startupOptions,
-				const UnifyWndShowMode& wndShowModes,
+				const UnifyEnum<ConsoleColor>& consoleStrColors,
+				const UnifyEnum<ConsoleColor>& consoleBgColors,
+				const UnifyEnum<StartupOption>& startupOptions,
+				const UnifyEnum<WndShowMode>& wndShowModes,
 				const File& stdInput,
 				const File& stdOutput,
 				const File& stdError
@@ -645,6 +585,76 @@ namespace wawl {
 			//自分の一部のメンバを保持
 			TString myDesktopName_, myTitle_;
 			File myInput_{}, myOutput_{}, myError_{};
+
+			//ルートコンストラクタ
+			StartupInfo(
+				const TString* desktopName,
+				const TString* wndTitle,
+				const Position* wndPos,
+				const Rectangle* wndSize,
+				const Rectangle* consoleBuf,
+				const UnifyEnum<ConsoleColor>* consoleStrColors,
+				const UnifyEnum<ConsoleColor>* consoleBgColors,
+				const UnifyEnum<StartupOption>* startupOptions,
+				const UnifyEnum<WndShowMode>* wndShowModes,
+				const File* stdInput,
+				const File* stdOutput,
+				const File* stdError
+				) {
+				::ZeroMemory(&suInfo_, sizeof(suInfo_));
+
+				//サイズ設定
+				suInfo_.cb = sizeof(::STARTUPINFO);
+				//デスクトップ名指定
+				if (desktopName != nullptr)
+					myDesktopName_ = *desktopName,
+					suInfo_.lpDesktop = const_cast<TChar*>(myDesktopName_.c_str());
+				//Windowのタイトル指定
+				if (wndTitle != nullptr)
+					myTitle_ = *wndTitle,
+					suInfo_.lpTitle = const_cast<TChar*>(myTitle_.c_str());
+				//Windowの座標設定
+				if (wndPos != nullptr)
+					suInfo_.dwFlags |= STARTF_USEPOSITION,
+					suInfo_.dwX = wndPos->x,
+					suInfo_.dwY = wndPos->y;
+				//Windowの大きさ設定
+				if (wndSize != nullptr)
+					suInfo_.dwFlags |= STARTF_USESIZE,
+					suInfo_.dwXSize = wndSize->x,
+					suInfo_.dwYSize = wndSize->y;
+				//Consoleのバッファーの大きさ設定
+				if (consoleBuf != nullptr)
+					suInfo_.dwFlags |= STARTF_USECOUNTCHARS,
+					suInfo_.dwXCountChars = consoleBuf->x,
+					suInfo_.dwYCountChars = consoleBuf->y;
+				//Consoleの文字色、背景色設定
+				if (consoleStrColors != nullptr)
+					suInfo_.dwFlags |= STARTF_USEFILLATTRIBUTE,
+					suInfo_.dwFillAttribute |= consoleStrColors->get();
+				if (consoleBgColors != nullptr)
+					suInfo_.dwFlags |= STARTF_USEFILLATTRIBUTE,
+					suInfo_.dwFillAttribute |= consoleBgColors->get();
+				if (startupOptions != nullptr)
+					suInfo_.dwFlags |= startupOptions->get();
+				//Window表示形式の設定
+				if (wndShowModes != nullptr)
+					suInfo_.dwFlags |= STARTF_USESHOWWINDOW,
+					suInfo_.wShowWindow = wndShowModes->get();
+				//標準入力、出力、エラー出力ファイルの設定
+				if (stdInput != nullptr)
+					myInput_ = *stdInput,
+					suInfo_.dwFlags |= STARTF_USESTDHANDLES,
+					suInfo_.hStdInput = myInput_.get();
+				if (stdOutput != nullptr)
+					myOutput_ = *stdOutput,
+					suInfo_.dwFlags |= STARTF_USESTDHANDLES,
+					suInfo_.hStdOutput = myOutput_.get();
+				if (stdError != nullptr)
+					myError_ = *stdError,
+					suInfo_.dwFlags |= STARTF_USESTDHANDLES,
+					suInfo_.hStdError = myError_.get();
+			}
 		};
 
 		//プロセス情報
@@ -693,7 +703,6 @@ namespace wawl {
 			PriorityLv5 = HIGH_PRIORITY_CLASS,
 			MaxPriority = REALTIME_PRIORITY_CLASS
 		};
-		using UnifyProcCreateProv = _impl_UnifyEnum<ProcCreateProv>;
 
 		class Process {
 		public:
@@ -701,6 +710,20 @@ namespace wawl {
 			Process(Process&&) = default;
 			Process& operator = (Process&&) = default;
 
+			Process(
+				const TString& cmdLine
+				) :
+				Process(
+				nullptr,
+				&cmdLine,
+				nullptr,
+				nullptr,
+				false,
+				nullptr,
+				nullptr,
+				nullptr,
+				nullptr
+				) {}
 			Process(
 				const TString& cmdLine,
 				const StartupInfo& startupInfo
@@ -718,7 +741,7 @@ namespace wawl {
 					) {}
 			Process(
 				const TString& cmdLine,
-				const UnifyProcCreateProv& createProv,
+				const UnifyEnum<ProcCreateProv>& createProv,
 				const StartupInfo& startupInfo
 				) :
 				Process(
@@ -735,7 +758,7 @@ namespace wawl {
 			Process(
 				const TString& appName,
 				const TString& cmdLineArgs,
-				const UnifyProcCreateProv& createProv,
+				const UnifyEnum<ProcCreateProv>& createProv,
 				const TString& currentDir,
 				const StartupInfo& startupInfo
 				) :
@@ -756,7 +779,7 @@ namespace wawl {
 				const SecurityAttrib& procAttrib,
 				const SecurityAttrib& threadAttrib,
 				bool doInheritHandle,
-				const UnifyProcCreateProv& createProv,
+				const UnifyEnum<ProcCreateProv>& createProv,
 				const TString& envVars,
 				const TString& currentDir,
 				const StartupInfo& startupInfo
@@ -773,6 +796,18 @@ namespace wawl {
 					&startupInfo
 					) {}
 
+			void open(
+				const TString& cmdLine
+				) {
+				Process proc(
+					cmdLine
+					);
+				procInfo_ = ValType(proc.procInfo_.release(), releaseInfo);
+				procAttrib_ = std::unique_ptr<SecurityAttrib>(proc.procAttrib_.release());
+				threadAttrib_ = std::unique_ptr<SecurityAttrib>(proc.threadAttrib_.release());
+				startupInfo_ = std::unique_ptr<StartupInfo>(proc.startupInfo_.release());
+				error_ = proc.error_;
+			}
 			void open(
 				const TString& cmdLine,
 				const StartupInfo& startupInfo
@@ -806,8 +841,8 @@ namespace wawl {
 				return false;
 			}
 
-			bool fail() {
-				return procInfo_ == nullptr;
+			bool isAlive() {
+				return procInfo_ != nullptr;
 			}
 			
 			explicit operator bool() {
@@ -853,17 +888,19 @@ namespace wawl {
 				const SecurityAttrib* procAttrib,
 				const SecurityAttrib* threadAttrib,
 				bool doInheritHandle,
-				const UnifyProcCreateProv* createProv,
+				const UnifyEnum<ProcCreateProv>* createProv,
 				const TString* envVars,
 				const TString* currentDir,
 				const StartupInfo* startupInfo
 				) {
-				if (procAttrib != nullptr)
+				if (procAttrib)
 					procAttrib_ = std::make_unique<SecurityAttrib>(*procAttrib);
-				if (threadAttrib != nullptr)
+				if (threadAttrib)
 					threadAttrib_ = std::make_unique<SecurityAttrib>(*threadAttrib);
-				if (startupInfo != nullptr)
+				if (startupInfo)
 					startupInfo_ = std::make_unique<StartupInfo>(*startupInfo);
+				else
+					startupInfo_ = std::make_unique<StartupInfo>();
 
 				ProcInfo* tmpProcInfo = new ProcInfo();
 
@@ -877,7 +914,7 @@ namespace wawl {
 						(createProv == nullptr ? NORMAL_PRIORITY_CLASS : createProv->get()),
 						(envVars == nullptr ? nullptr : reinterpret_cast<void*>(const_cast<TChar*>(envVars->c_str()))),
 						(currentDir == nullptr ? nullptr : currentDir->c_str()),
-						(startupInfo == nullptr ? nullptr : &startupInfo_->get()),
+						&startupInfo_->get(),
 						reinterpret_cast<::PROCESS_INFORMATION*>(tmpProcInfo)
 						) == 0
 					)
@@ -1035,8 +1072,6 @@ namespace wawl {
 		private:
 			::HMODULE dll_;
 		};
-
-		//~test code
 
 	} //::wawl::fs
 } //::wawl

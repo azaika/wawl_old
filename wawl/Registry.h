@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Windows.h>
 #include "BaseType.h"
 #include "FileSystem.h"
 #include "Utility.h"
@@ -16,7 +15,6 @@ namespace wawl {
 			Reserved = REG_OPTION_RESERVED,
 			Volatile = REG_OPTION_VOLATILE,
 		};
-		using UnifyOption = _impl_UnifyEnum<Option>;
 
 		enum class Desc : Dword {
 			AllAccess = KEY_ALL_ACCESS,
@@ -35,7 +33,6 @@ namespace wawl {
 			Wow64Res = KEY_WOW64_RES,
 			Write = KEY_WRITE,
 		};
-		using UnifyKeyOption = _impl_UnifyEnum<Desc>;
 
 		enum class Type : Dword {
 			Binary = REG_BINARY,
@@ -45,7 +42,6 @@ namespace wawl {
 			QWord = REG_QWORD,
 			String = REG_SZ,
 		};
-		using UnifyType = _impl_UnifyEnum<Type>;
 
 		class Key {
 		public:
@@ -56,7 +52,7 @@ namespace wawl {
 			Key(const Key&) = delete;
 			Key& operator = (const Key&) = delete;
 
-			explicit Key(HKEY thisKey) :
+			explicit Key(::HKEY thisKey) :
 				hkey_(thisKey) {}
 
 			Key(HKEY currentKey,

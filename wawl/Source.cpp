@@ -24,6 +24,17 @@ void wawlMain() {
 		mb::show(L"Error", error.msg(), mb::Button::OK);
 	}
 
+	window.on(Msg::LClick, [&](UintPtr lp, IntPtr rp) {
+		proc.open(L"notepad");
+
+		return window.defaultProc(Msg::LClick, lp, rp);
+	});
+	window.on(Msg::RClick, [&](UintPtr lp, IntPtr rp) {
+		proc.open(L"mspaint");
+
+		return window.defaultProc(Msg::LClick, lp, rp);
+	});
+
 	while (Sleep(1), true) {
 		//終了処理
 		if (kb::getState(KeyCode::Escape)) {
@@ -44,7 +55,7 @@ void wawlMain() {
 		//他アプリケーション起動のテスト
 		else if (kb::getState(KeyCode::Two)) {
 			if (!proc) {
-				proc.open(L"notepad.exe", fs::StartupInfo{});
+				proc.open(L"notepad.exe");
 
 				if (!proc)
 					mb::show(L"Error", proc.getError().msg(), mb::Button::OK);

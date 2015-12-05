@@ -15,6 +15,7 @@
 
 #ifdef WAWL_ENABLE_WINDOW
 	namespace mb = ::wawl::wnd::mb;
+	using ::wawl::wnd::Msg;
 #endif
 
 #endif

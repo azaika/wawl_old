@@ -45,6 +45,7 @@ namespace wawl {
 	//ポインタを格納する整数型
 	using IntPtr = ::INT_PTR;
 	using UintPtr = ::UINT_PTR;
+	using LongPtr = ::LONG_PTR;
 
 	//ハンドル
 	using Handle = ::HANDLE;
@@ -139,26 +140,28 @@ namespace wawl {
 
 	};
 
-	//汎用enum組み合わせ型
+	//WinAPI定数用enum組み合わせ型
 	template <typename EnumType>
-	class _impl_UnifyEnum {
+	class UnifyEnum {
 	public:
 		//enumの内部型
 		using ValueType = typename std::underlying_type<EnumType>::type;
 
-		_impl_UnifyEnum() = default;
-		_impl_UnifyEnum(const _impl_UnifyEnum<EnumType>&) = default;
-		_impl_UnifyEnum(_impl_UnifyEnum<EnumType>&&) = default;
-		_impl_UnifyEnum<EnumType>& operator = (const _impl_UnifyEnum<EnumType>&) = default;
-		_impl_UnifyEnum<EnumType>& operator = (_impl_UnifyEnum<EnumType>&&) = default;
+		UnifyEnum() = default;
+		UnifyEnum(const UnifyEnum<EnumType>&) = default;
+		UnifyEnum(UnifyEnum<EnumType>&&) = default;
+		UnifyEnum<EnumType>& operator = (const UnifyEnum<EnumType>&) = default;
+		UnifyEnum<EnumType>& operator = (UnifyEnum<EnumType>&&) = default;
 
-		constexpr _impl_UnifyEnum(const EnumType& val) :
+		constexpr UnifyEnum(const EnumType& val) :
 			vals_(static_cast<ValueType>(val)) {}
-		_impl_UnifyEnum(const std::initializer_list<ValueType>& valList) {
+		constexpr UnifyEnum(ValueType val) :
+			vals_(val) {}
+		UnifyEnum(const std::initializer_list<ValueType>& valList) {
 			for (auto&& val : valList)
 				vals_ |= val;
 		}
-		_impl_UnifyEnum(const std::initializer_list<EnumType>& valList) {
+		UnifyEnum(const std::initializer_list<EnumType>& valList) {
 			for (auto&& val : valList)
 				vals_ |= static_cast<ValueType>(val);
 		}
@@ -178,15 +181,22 @@ namespace wawl {
 		}
 
 		//合成
-		_impl_UnifyEnum<ValueType>& compose(const ValueType& val) {
+		auto& compose(ValueType val) {
 			vals_ |= static_cast<ValueType>(val);
 			return *this;
 		}
-		_impl_UnifyEnum<ValueType>& operator |= (const ValueType& val) {
+		auto& operator |= (ValueType val) {
 			return compose(val);
 		}
-		_impl_UnifyEnum<ValueType>&& operator | (const EnumType& val) const {
-			return std::move(_impl_UnifyEnum<ValueType>(vals_ | val));
+		UnifyEnum<ValueType> operator | (const EnumType& val) const {
+			return UnifyEnum<ValueType>(vals_ | val);
+		}
+
+		//要素の削除
+		auto& except(const UnifyEnum<EnumType>& val) {
+			vals_ &= ~val();
+
+			return *this;
 		}
 
 		//含まれているかどうか
@@ -214,59 +224,6 @@ namespace wawl {
 	//WinAPI構造体のラップ
 #ifdef TRUE
 
-	/* test code
-	enum class WndShowmode_ : Dword {
-		Hide = 1 << 0,
-		Show = 1 << 1,
-		Restore = 1 << 2,
-
-		Active = 1 << 3,
-		Inactive = 1 << 4,
-
-		Max = 1 << 5,
-		Min = 1 << 6,
-		Normal = 1 << 7,
-
-		Default = 1 << 8,
-		ForceMin = 1 << 9
-	};
-	using UnifyWndShowmode_ = _impl_UnifyEnum < WndShowmode_ >;
-	Word _impl_toSWConstant(const UnifyWndShowmode_& sw) {
-		if (sw.has(WndShowmode_::Show)) {
-			if (sw.has(WndShowmode_::Max))
-				return SW_SHOWMAXIMIZED;
-			else if (sw.has(WndShowmode_::Min)) {
-				if (sw.has(WndShowmode_::Inactive))
-					return SW_SHOWMINNOACTIVE;
-				else
-					return SW_SHOWMINIMIZED;
-			}
-			else if (sw.has(WndShowmode_::Normal)) {
-				if (sw.has(WndShowmode_::Inactive))
-					return SW_SHOWNOACTIVATE;
-				else
-					return SW_SHOWNORMAL;
-			}
-			else if (sw.has(WndShowmode_::Inactive))
-				return SW_SHOWNA;
-			else
-				return SW_SHOW;
-		}
-		else if (sw.has(WndShowmode_::Hide))
-			return SW_HIDE;
-		else if (sw.has(WndShowmode_::Restore))
-			return SW_RESTORE;
-		else if (sw.has(WndShowmode_::Max))
-			return SW_MAXIMIZE;
-		else if (sw.has(WndShowmode_::Min))
-			return SW_MINIMIZE;
-		else if (sw.has(WndShowmode_::Default))
-			return SW_SHOWDEFAULT;
-		else if (sw.has(WndShowmode_::ForceMin))
-			return SW_FORCEMINIMIZE;
-	}
-	~test code*/
-
 	//Window表示形式
 	enum class WndShowMode : Word {
 		ForceMinimize = SW_FORCEMINIMIZE,
@@ -283,7 +240,6 @@ namespace wawl {
 		NormalShow = SW_SHOWNORMAL,
 		NoactivateNormalShow = SW_SHOWNOACTIVATE
 	};
-	using UnifyWndShowMode = _impl_UnifyEnum < WndShowMode >;
 
 #endif
 

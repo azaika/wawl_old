@@ -230,8 +230,9 @@ namespace wawl {
 			//すべてのキー
 			using Allkey = std::array < bool, static_cast<std::size_t>(Code::_impl_EndEnum) + 1 >;
 			//すべてのキー入力状態を一括取得
-			Allkey&& getAllState(bool doGetToggle = false) {
+			Allkey getAllState(bool doGetToggle = false) {
 				Byte keyboard[static_cast<std::size_t>(Code::_impl_EndEnum) + 1];
+
 				if (::GetKeyboardState(keyboard) == false)
 					throw Error(::GetLastError());
 
@@ -239,7 +240,7 @@ namespace wawl {
 				for (std::size_t i = 0; i < ret.size(); ++i)
 					ret[i] = (keyboard[i] & (doGetToggle ? 0x01 : 0x80)) != 0;
 
-				return std::move(ret);
+				return ret;
 			}
 
 			bool sendEvent(Code key) {
