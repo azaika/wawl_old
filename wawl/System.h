@@ -13,8 +13,10 @@
 //wawl based Header
 #include "BaseType.h"
 
+#ifndef DONT_USE_WAWLMAIN
 //ユーザー定義Main
 void wawlMain();
+#endif
 
 namespace wawl {
 	namespace sys {
@@ -32,11 +34,11 @@ namespace wawl {
 		}
 
 		//システムクロックをミリ秒単位で取得
-		inline std::size_t getTimeMilisec() {
+		inline std::size_t getTime() {
 			return static_cast<std::size_t>(timeGetTime());
 		}
 		
-		//Exitの種類
+		//exitの種類
 		enum class ExitMode : unsigned int {
 			Logoff = EWX_LOGOFF,
 			Poweroff = EWX_POWEROFF,
@@ -44,13 +46,13 @@ namespace wawl {
 			Shutdown = EWX_SHUTDOWN
 		};
 		
-		inline bool Exit(ExitMode mode) {
+		inline bool exit(ExitMode mode) {
 			return ::ExitWindowsEx(
 				static_cast<unsigned int>(mode),
 				0
 				) != 0;
 		}
-		inline bool Exit(ExitMode mode, bool doWaitHang) {
+		inline bool exit(ExitMode mode, bool doWaitHang) {
 			return ::ExitWindowsEx(
 				static_cast<unsigned int>(mode) |
 				(doWaitHang ? EWX_FORCEIFHUNG : EWX_FORCE),
@@ -58,8 +60,8 @@ namespace wawl {
 				) != 0;
 		}
 		
-		//コンピューターをシャットダウンします
-		inline bool StartShutdown(const TString& machineName, const TString& msg, Dword timeOut = 0, Bool force = false, Bool doRestart = false) {
+		//コンピューターをシャットダウンする
+		inline bool startShutdown(const TString& machineName, const TString& msg, Dword timeOut = 0, Bool force = false, Bool doRestart = false) {
 			return ::InitiateSystemShutdown(
 				const_cast<TChar*>(machineName.c_str()),
 				const_cast<TChar*>(msg.c_str()),
@@ -68,8 +70,8 @@ namespace wawl {
 				doRestart
 				) != 0;
 		}
-		//StartShutDownでtimeOutが設定されていた場合、その時間以内ならシャットダウンを中止します。
-		inline bool AbortShutdown(const TString& machineName) {
+		//startShutDownでtimeOutが設定されていた場合、その時間以内ならシャットダウンを中止する
+		inline bool abortShutdown(const TString& machineName) {
 			return ::AbortSystemShutdown(const_cast<TChar*>(machineName.c_str())) != 0;
 		}
 
@@ -91,6 +93,7 @@ namespace wawl {
 			//システムのタイマー分解能を元に戻す
 			friend bool resetTimeRes();
 
+		#ifdef WIN32
 			static void setWinMainArgs(const TString& cmdLine, int cmdShow) {
 				//初回呼び出しの時のみ登録
 				static bool isFirst = true;
@@ -100,6 +103,23 @@ namespace wawl {
 					windowShowmode_ = cmdShow;
 				}
 			}
+		#else //!WIN32
+			static void setMainArgs(int argc, char* argv[]) {
+				//初回呼び出しの時のみ登録
+				static bool isFirst = true;
+				if (isFirst) {
+					isFirst = false;
+					windowShowmode_ = WM_SHOW;
+
+					AString cmdLine;
+					//プログラム名を含めず結合
+					for (int i = 1; i < argc; ++i)
+						args += cmdLine[i], args += (i == argc - 1 ? "" : " ");
+
+					cmdArgStr_ = cmdLine;
+				}
+			}
+		#endif //WIN32
 
 		private:
 			//コマンドライン引数
@@ -141,6 +161,10 @@ namespace wawl {
 	} //::wawl::sys
 } //::wawl
 
+#ifndef DONT_USE_WAWLMAIN
+
+#ifdef WIN32
+
 int WINAPI _tWinMain(
 	HINSTANCE hInst,
 	HINSTANCE hPrevInst,
@@ -155,3 +179,13 @@ int WINAPI _tWinMain(
 
 	return 0;
 }
+
+#else //!WIN32
+
+int main(int argc, char* argv[]) {
+	wawlMain();
+}
+
+#endif //WIN32
+
+#endif //DONT_USE_WAWLMAIN

@@ -273,11 +273,27 @@ namespace wawl {
 		};
 
 		enum class Msg : unsigned int {
+			Activate = WM_ACTIVATE,
+			AppActivate = WM_ACTIVATEAPP,
 			Create = WM_CREATE,
 			Timer = WM_TIMER,
 			Destroy = WM_DESTROY,
 			LClick = WM_LBUTTONDOWN,
-			RClick = WM_RBUTTONDOWN
+			MClick = WM_MBUTTONDOWN,
+			RClick = WM_RBUTTONDOWN,
+			LDoubleClick = WM_LBUTTONDBLCLK,
+			MDoubleClick = WM_MBUTTONDBLCLK,
+			RDoubleClick = WM_RBUTTONDBLCLK,
+			LUp = WM_LBUTTONUP,
+			MUp = WM_MBUTTONUP,
+			RUp = WM_RBUTTONUP,
+			Close = WM_CLOSE,
+			Enable = WM_ENABLE,
+			Resize = WM_SIZE,
+			Move = WM_MOVE,
+			Quit = WM_QUIT,
+			Null = WM_NULL,
+			Paint = WM_PAINT
 		};
 
 		/*enum class DefaultProp : UintPtr {
@@ -481,8 +497,12 @@ namespace wawl {
 				return ::SetWindowText(hwnd_, title.c_str()) != 0;
 			}
 
-			bool isAlive() {
+			bool isAlive() const {
 				return hwnd_ != nullptr;
+			}
+
+			bool isActive() const {
+				return ::GetActiveWindow() == hwnd_;
 			}
 
 			void update() {
@@ -563,7 +583,7 @@ namespace wawl {
 				::SetWindowLong(hwnd_, GWL_STYLE, newStyle());
 			}
 
-			Position toScreenPos(const Position& clientPos) {
+			Position toScreenPos(const Position& clientPos) const {
 				LPPOINT posBuf;
 				posBuf->x = clientPos.x;
 				posBuf->y = clientPos.y;
@@ -573,7 +593,7 @@ namespace wawl {
 
 				return Position(posBuf->x, posBuf->y);
 			}
-			Position toClientPos(const Position& screenPos) {
+			Position toClientPos(const Position& screenPos) const {
 				LPPOINT posBuf;
 				posBuf->x = screenPos.x;
 				posBuf->y = screenPos.y;

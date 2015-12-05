@@ -50,11 +50,12 @@ namespace wawl {
 		};
 		//セキュリティ記述子
 		class SecurityAttrib {
-			friend SecurityAttrib;
-
 		public:
 			SecurityAttrib(SecurityAttrib&&) = default;
 			SecurityAttrib& operator = (SecurityAttrib&&) = default;
+
+			SecurityAttrib() :
+				SecurityAttrib(false) {}
 
 			SecurityAttrib(bool doInheritHandle, const SecurityDesc& secDesc) :
 				secDesc_(std::make_unique<SecurityDesc>(secDesc)) {
@@ -62,7 +63,7 @@ namespace wawl {
 				secAttr_.bInheritHandle = doInheritHandle;
 				secAttr_.lpSecurityDescriptor = &secDesc_->get();
 			}
-			explicit SecurityAttrib(bool doInheritHandle = false) {
+			explicit SecurityAttrib(bool doInheritHandle) {
 				secAttr_.nLength = sizeof(::SECURITY_ATTRIBUTES);
 				secAttr_.bInheritHandle = doInheritHandle;
 				secAttr_.lpSecurityDescriptor = nullptr;
@@ -77,6 +78,20 @@ namespace wawl {
 				}
 				else
 					secAttr_.lpSecurityDescriptor = nullptr;
+			}
+
+			SecurityAttrib& operator = (const SecurityAttrib& val) {
+				secAttr_.nLength = sizeof(::SECURITY_ATTRIBUTES);
+				secAttr_.bInheritHandle = val.get().bInheritHandle;
+
+				if (val.secDesc_ != nullptr) {
+					secDesc_ = std::make_unique<SecurityDesc>(*val.secDesc_);
+					secAttr_.lpSecurityDescriptor = secDesc_.get();
+				}
+				else
+					secAttr_.lpSecurityDescriptor = nullptr;
+
+				return *this;
 			}
 
 			//内部の値を取得
@@ -706,6 +721,8 @@ namespace wawl {
 
 		class Process {
 		public:
+			static constexpr Dword Running = STILL_ACTIVE;
+
 			Process() = default;
 			Process(Process&&) = default;
 			Process& operator = (Process&&) = default;
@@ -803,9 +820,9 @@ namespace wawl {
 					cmdLine
 					);
 				procInfo_ = ValType(proc.procInfo_.release(), releaseInfo);
-				procAttrib_ = std::unique_ptr<SecurityAttrib>(proc.procAttrib_.release());
-				threadAttrib_ = std::unique_ptr<SecurityAttrib>(proc.threadAttrib_.release());
-				startupInfo_ = std::unique_ptr<StartupInfo>(proc.startupInfo_.release());
+				procAttrib_ = proc.procAttrib_;
+				threadAttrib_ = proc.threadAttrib_;
+				startupInfo_ = proc.startupInfo_;
 				error_ = proc.error_;
 			}
 			void open(
@@ -817,9 +834,9 @@ namespace wawl {
 					startupInfo
 					);
 				procInfo_ = ValType(proc.procInfo_.release(), releaseInfo);
-				procAttrib_ = std::unique_ptr<SecurityAttrib>(proc.procAttrib_.release());
-				threadAttrib_ = std::unique_ptr<SecurityAttrib>(proc.threadAttrib_.release());
-				startupInfo_ = std::unique_ptr<StartupInfo>(proc.startupInfo_.release());
+				procAttrib_ = proc.procAttrib_;
+				threadAttrib_ = proc.threadAttrib_;
+				startupInfo_ = proc.startupInfo_;
 				error_ = proc.error_;
 			}
 
@@ -839,6 +856,12 @@ namespace wawl {
 				}
 
 				return false;
+			}
+
+			Dword getExitCode() const {
+				Dword ret;
+				::GetExitCodeProcess(procInfo_->procHandle, &ret);
+				return ret;
 			}
 
 			bool isAlive() {
@@ -876,8 +899,8 @@ namespace wawl {
 			//プロセス情報
 			ValType procInfo_ = ValType(nullptr, releaseInfo);
 			//一部引数の保存
-			std::unique_ptr<SecurityAttrib> procAttrib_ = nullptr, threadAttrib_ = nullptr;
-			std::unique_ptr<StartupInfo> startupInfo_ = nullptr;
+			SecurityAttrib procAttrib_, threadAttrib_;
+			StartupInfo startupInfo_;
 			//エラーコード
 			Error error_ = Error(0);
 
@@ -894,13 +917,14 @@ namespace wawl {
 				const StartupInfo* startupInfo
 				) {
 				if (procAttrib)
-					procAttrib_ = std::make_unique<SecurityAttrib>(*procAttrib);
+					procAttrib_ = *procAttrib;
 				if (threadAttrib)
-					threadAttrib_ = std::make_unique<SecurityAttrib>(*threadAttrib);
+					threadAttrib_ = *threadAttrib;
+
 				if (startupInfo)
-					startupInfo_ = std::make_unique<StartupInfo>(*startupInfo);
+					startupInfo_ = *startupInfo;
 				else
-					startupInfo_ = std::make_unique<StartupInfo>();
+					startupInfo_ = StartupInfo();
 
 				ProcInfo* tmpProcInfo = new ProcInfo();
 
@@ -908,13 +932,13 @@ namespace wawl {
 					::CreateProcess(
 						(appName == nullptr ? nullptr : appName->c_str()),
 						(cmdLineArgs == nullptr ? nullptr : const_cast<TChar*>(cmdLineArgs->c_str())),
-						(procAttrib == nullptr ? nullptr : &procAttrib_->get()),
-						(threadAttrib == nullptr ? nullptr : &threadAttrib_->get()),
+						(procAttrib == nullptr ? nullptr : &procAttrib_.get()),
+						(threadAttrib == nullptr ? nullptr : &threadAttrib_.get()),
 						doInheritHandle,
 						(createProv == nullptr ? NORMAL_PRIORITY_CLASS : createProv->get()),
 						(envVars == nullptr ? nullptr : reinterpret_cast<void*>(const_cast<TChar*>(envVars->c_str()))),
 						(currentDir == nullptr ? nullptr : currentDir->c_str()),
-						&startupInfo_->get(),
+						&startupInfo_.get(),
 						reinterpret_cast<::PROCESS_INFORMATION*>(tmpProcInfo)
 						) == 0
 					)

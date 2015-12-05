@@ -25,12 +25,14 @@ void wawlMain() {
 	}
 
 	window.on(Msg::LClick, [&](UintPtr lp, IntPtr rp) {
-		proc.open(L"notepad");
+		if (!proc)
+			proc.open(L"notepad");
 
 		return window.defaultProc(Msg::LClick, lp, rp);
 	});
 	window.on(Msg::RClick, [&](UintPtr lp, IntPtr rp) {
-		proc.open(L"mspaint");
+		if (!proc)
+			proc.open(L"mspaint");
 
 		return window.defaultProc(Msg::LClick, lp, rp);
 	});
@@ -78,6 +80,6 @@ void wawlMain() {
 
 			window.update();
 		}
-			
+
 	}
 }
