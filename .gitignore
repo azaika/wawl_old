@@ -8,8 +8,8 @@
 *.suo
 *.vcxproj
 *.filters
+*.opendb
 Debug
 Release
 x64
-.vs
-.vscode
+.*
