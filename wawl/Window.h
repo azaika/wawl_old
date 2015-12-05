@@ -597,6 +597,10 @@ namespace wawl {
 				msgProcs_.clear();
 			}
 
+			explicit operator bool() {
+				return hwnd_ != nullptr;
+			}
+
 		protected:
 			::HWND hwnd_ = nullptr;
 			//自身への参照を保持
