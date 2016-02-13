@@ -10,6 +10,8 @@
 #include <unordered_map>
 #include <functional>
 
+#define WAWL_MSG_PROC(lhs, rhs) [&](UintPtr lhs, IntPtr rhs) -> LongPtr
+
 namespace wawl {
 	namespace wnd {
 
@@ -290,6 +292,7 @@ namespace wawl {
 			Close = WM_CLOSE,
 			Enable = WM_ENABLE,
 			Resize = WM_SIZE,
+			Resizing = WM_SIZING,
 			Move = WM_MOVE,
 			Quit = WM_QUIT,
 			Null = WM_NULL,

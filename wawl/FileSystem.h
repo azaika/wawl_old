@@ -10,6 +10,8 @@
 #include <cctype>
 #include <cstdio>
 #include <memory>
+#include <thread>
+#include <mutex>
 
 namespace wawl {
 	namespace fs {
@@ -202,6 +204,44 @@ namespace wawl {
 			EnableSecurityCamouflage = SECURITY_SQOS_PRESENT
 		};
 
+		enum class PipeAccess : Dword {
+			//クライアントが書き込み、サーバーは読み取り
+			Inbound = 1,
+			//サーバーが読み込み、クライアントが書き込み
+			Outbound = 2,
+			//自由
+			Free = 3
+		};
+
+		enum class ConnectMode : Dword {
+			//読み取り専用
+			Read = 1ul << 31,
+			//書き込み専用
+			Write = 1ul << 30,
+			//自由
+			Free = Read | Write
+		};
+
+		/// <summary>PipeAccessをConnectModeに変換します。</summary>
+		/// <param name="pa">変換元のPipeAccess</param>
+		inline ConnectMode toConnectMode(PipeAccess pa) {
+			return (
+				pa == PipeAccess::Free ? ConnectMode::Free :
+				pa == PipeAccess::Inbound ? ConnectMode::Write :
+				ConnectMode::Read
+				);
+		}
+
+		/// <summary>ConnectModeをPipeAccessに変換します。</summary>
+		/// <param name="pa">変換元のConnectMode</param>
+		inline PipeAccess toPipeAccess(ConnectMode pa) {
+			return (
+				pa == ConnectMode::Free ? PipeAccess::Free :
+				pa == ConnectMode::Write ? PipeAccess::Inbound :
+				PipeAccess::Outbound
+				);
+		}
+
 		//ファイル
 		class File {
 		public:
@@ -210,6 +250,13 @@ namespace wawl {
 			File(File&&) = default;
 			File& operator = (const File&) = default;
 			File& operator = (File&&) = default;
+
+			File(FileHandle handle) {
+				file_ = std::make_shared<FileHandle>(handle);
+			}
+			File(const std::shared_ptr<FileHandle>& handle) {
+				file_ = handle;
+			}
 
 			File(
 				const TString& fileName,
@@ -309,7 +356,41 @@ namespace wawl {
 			//TODO: openのオーバーロード追加
 
 			void close() {
-				file_ = nullptr;
+				file_.reset();
+			}
+
+			std::size_t getSize() const {
+				LARGE_INTEGER li;
+				if (::GetFileSizeEx(file_.get(), &li))
+					throw Error(::GetLastError());
+
+				return static_cast<std::size_t>(li.QuadPart);
+			}
+
+			bool read(TString& buffer) const {
+				buffer.resize(getSize() + 1);
+				Dword writtenSize;
+
+				if (
+					::ReadFile(
+						file_.get(),
+						const_cast<TChar*>(buffer.c_str()),
+						buffer.size(),
+						&writtenSize,
+						nullptr
+						)
+					)
+					throw Error(::GetLastError());
+
+				return true;
+			}
+			bool write(const TString& str) {
+				Dword writtenSize;
+
+				if (::WriteFile(file_.get(), str.c_str(), str.size() + 1, &writtenSize, nullptr))
+					throw Error(::GetLastError());
+
+				return true;
 			}
 
 			//内部の値を取得
@@ -323,8 +404,6 @@ namespace wawl {
 		private:
 			//本体
 			std::shared_ptr<FileHandle> file_ = nullptr;
-			//一部引数の保存
-			std::shared_ptr<SecurityAttrib> mySecAttr_ = nullptr;
 
 			//ルートコンストラクタ
 			File(
@@ -336,23 +415,22 @@ namespace wawl {
 				const UnifyEnum<FileAttrib>* fileAttr,
 				const File* baseFile
 				) {
-				if (secAttr != nullptr)
-					mySecAttr_ = std::make_shared<SecurityAttrib>(*secAttr);
+				::SECURITY_ATTRIBUTES sa = (secAttr ? *secAttr : SecurityAttrib{}).get();
+
 				file_ = std::shared_ptr<FileHandle>(
 					new FileHandle(
-					::CreateFile(
-					(fileName == nullptr ? nullptr : fileName->c_str()),
-					(accessDesc == nullptr ? GENERIC_ALL : accessDesc->get()),
-					(shareMode == nullptr ? NULL : shareMode->get()),
-					(secAttr == nullptr ? nullptr : &(mySecAttr_->get())),
-					(createProv == nullptr ? CREATE_ALWAYS : createProv->get()),
-					(fileAttr == nullptr ? FILE_ATTRIBUTE_NORMAL : fileAttr->get()),
-					(baseFile == nullptr ? nullptr : baseFile->get())
-					)),
+						::CreateFile(
+							(fileName == nullptr ? nullptr : fileName->c_str()),
+							(accessDesc == nullptr ? GENERIC_ALL : accessDesc->get()),
+							(shareMode == nullptr ? NULL : shareMode->get()),
+							&sa,
+							(createProv == nullptr ? CREATE_ALWAYS : createProv->get()),
+							(fileAttr == nullptr ? FILE_ATTRIBUTE_NORMAL : fileAttr->get()),
+							(baseFile == nullptr ? nullptr : baseFile->get())
+							)),
 					[](::HANDLE* h) {
-						if (h != nullptr)
-							::CloseHandle(*h), delete h;
-					}
+					::CloseHandle(*h), delete h;
+				}
 				);
 
 				if (*file_ == INVALID_HANDLE_VALUE)
@@ -360,6 +438,151 @@ namespace wawl {
 			}
 
 		};
+
+		class PipeServer {
+		public:
+			PipeServer() = default;
+			PipeServer(PipeServer&&) = default;
+			PipeServer& operator = (PipeServer&&) = default;
+
+			void start() {
+				::OVERLAPPED ol = {};
+				ol.hEvent = *events_[0];
+
+				::ConnectNamedPipe(*pipe_, &ol);
+
+				waitConnect_ = std::thread([this](Handle ev1, Handle ev2) {
+					const Handle evs[2] = { ev1, ev2 };
+
+					::WaitForMultipleObjects(
+						2,
+						evs,
+						false,
+						INFINITE
+						);
+
+					std::lock_guard<std::mutex> lock(mtx_);
+					hasConnected_ = true;
+				}, *events_[0], *events_[1]);
+			}
+
+			bool update() {
+				if (!reaction_)
+					return true;
+
+				bool complete = false;
+				{
+					std::lock_guard<std::mutex> lock(mtx_);
+					complete = hasConnected_;
+					hasConnected_ = false;
+				}
+
+				if (complete) {
+					auto pipe = File(pipe_);
+					reaction_(pipe);
+				}
+
+				return true;
+			}
+
+			bool disconnect() {
+				if (!pipe_)
+					return false;
+
+				return
+					::FlushFileBuffers(*pipe_) != 0 &&
+					::DisconnectNamedPipe(*pipe_) != 0;
+			}
+
+			/// <summary>クライアントへの応答時に呼び出される関数を設定します。</summary>
+			/// <param name="f">サーバーの応答時に呼び出される関数</param>
+			void reaction(const std::function<void(File&)>& f) {
+				reaction_ = f;
+			}
+
+			PipeAccess getAccessMode() const {
+				::DWORD ret, tmp;
+
+				::GetNamedPipeInfo(*pipe_, &ret, &tmp, &tmp, &tmp);
+
+				return static_cast<PipeAccess>(ret);
+			}
+
+		private:
+			static void releaseHandle(Handle* h) {
+				::CloseHandle(*h);
+			}
+			using HandlePtr = std::unique_ptr<Handle, decltype(&releaseHandle)>;
+
+			TString name_;
+			std::shared_ptr<Handle> pipe_ = nullptr;
+
+			std::function<void(File&)> reaction_;
+
+			mutable std::mutex mtx_;
+			//接続待ちスレッド
+			std::thread waitConnect_;
+			//接続待ちEvent用Handle
+			//0: 待機用, 1:強制終了用
+			HandlePtr events_[2] = { { nullptr, releaseHandle },{ nullptr, releaseHandle } };
+			bool hasConnected_ = false;
+
+		};
+
+		/// <summary>サーバー(パイプ)に接続します。</summary>
+		/// <param name="serverName">サーバー(パイプ)の名前</param>
+		/// <param name="mode">読み書きアクセス範囲</param>
+		/// <param name="isRawName"><paramref name="serverName"/>がWinAPI準拠の名前になっているかどうか</param>
+		/// <remarks><c>mode</c>がアクセスするサーバーの設定と一致している必要があります。</remarks>
+		File connectServer(
+			const TString& serverName,
+			ConnectMode mode,
+			bool isRawName
+			) {
+			Handle pipe;
+
+			pipe = ::CreateFile(
+				(isRawName ? serverName : TEXT("\\\\.\\pipe\\") + serverName).c_str(),
+				static_cast<::DWORD>(mode),
+				0,
+				nullptr,
+				OPEN_EXISTING,
+				0,
+				0
+				);
+			if (pipe == INVALID_HANDLE_VALUE)
+				return File();
+
+			return File(pipe);
+		}
+		/// <summary>サーバー(パイプ)に接続します。</summary>
+		/// <param name="serverName">サーバー(パイプ)の名前</param>
+		/// <param name="isRawName"><paramref name="serverName"/>がWinAPI準拠の名前になっているかどうか</param>
+		/// <remarks>アクセスするサーバーのアクセス設定がFreeである必要があります。</remarks>
+		inline File connectServer(
+			const TString& serverName,
+			bool isRawName = false
+			) {
+			return connectServer(serverName, ConnectMode::Free, isRawName);
+		}
+
+		std::pair<File, File> createPipe() {
+			::HANDLE h1, h2;
+			::CreatePipe(&h1, &h2, nullptr, 0);
+
+			return std::pair<File, File>({ h1, h2 });
+		}
+		std::pair<File, File> createPipe(const SecurityAttrib& secAttrib) {
+			::HANDLE h1, h2;
+			::CreatePipe(
+				&h1,
+				&h2,
+				const_cast<SECURITY_ATTRIBUTES*>(&secAttrib.get()),
+				0
+				);
+
+			return std::pair<File, File>({ h1, h2 });
+		}
 
 		//アプリケーション起動のための情報
 		class StartupInfo {
@@ -383,7 +606,7 @@ namespace wawl {
 					nullptr,
 					nullptr,
 					nullptr
-				) {}
+					) {}
 			StartupInfo(
 				const Position& wndPos
 				) :
@@ -731,16 +954,16 @@ namespace wawl {
 				const TString& cmdLine
 				) :
 				Process(
-				nullptr,
-				&cmdLine,
-				nullptr,
-				nullptr,
-				false,
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr
-				) {}
+					nullptr,
+					&cmdLine,
+					nullptr,
+					nullptr,
+					false,
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr
+					) {}
 			Process(
 				const TString& cmdLine,
 				const StartupInfo& startupInfo
@@ -820,9 +1043,6 @@ namespace wawl {
 					cmdLine
 					);
 				procInfo_ = ValType(proc.procInfo_.release(), releaseInfo);
-				procAttrib_ = proc.procAttrib_;
-				threadAttrib_ = proc.threadAttrib_;
-				startupInfo_ = proc.startupInfo_;
 				error_ = proc.error_;
 			}
 			void open(
@@ -834,9 +1054,6 @@ namespace wawl {
 					startupInfo
 					);
 				procInfo_ = ValType(proc.procInfo_.release(), releaseInfo);
-				procAttrib_ = proc.procAttrib_;
-				threadAttrib_ = proc.threadAttrib_;
-				startupInfo_ = proc.startupInfo_;
 				error_ = proc.error_;
 			}
 
@@ -864,11 +1081,45 @@ namespace wawl {
 				return ret;
 			}
 
-			bool isAlive() {
+			File getStdInput() const {
+				if (!::AttachConsole(procInfo_->procId))
+					throw Error(::GetLastError());
+
+				::HANDLE h = ::GetStdHandle(STD_INPUT_HANDLE);
+
+				if (!::AttachConsole(::GetCurrentProcessId()))
+					throw Error(::GetLastError());
+
+				return File(h);
+			}
+			File getStdOutput() const {
+				if (!::AttachConsole(procInfo_->procId))
+					throw Error(::GetLastError());
+
+				::HANDLE h = ::GetStdHandle(STD_OUTPUT_HANDLE);
+
+				if (!::AttachConsole(::GetCurrentProcessId()))
+					throw Error(::GetLastError());
+
+				return File(h);
+			}
+			File getStdError() const {
+				if (!::AttachConsole(procInfo_->procId))
+					throw Error(::GetLastError());
+
+				::HANDLE h = ::GetStdHandle(STD_ERROR_HANDLE);
+
+				if (!::AttachConsole(::GetCurrentProcessId()))
+					throw Error(::GetLastError());
+
+				return File(h);
+			}
+
+			bool isAlive() const {
 				return procInfo_ != nullptr;
 			}
-			
-			explicit operator bool() {
+
+			explicit operator bool() const {
 				return procInfo_ != nullptr;
 			}
 
@@ -898,9 +1149,6 @@ namespace wawl {
 
 			//プロセス情報
 			ValType procInfo_ = ValType(nullptr, releaseInfo);
-			//一部引数の保存
-			SecurityAttrib procAttrib_, threadAttrib_;
-			StartupInfo startupInfo_;
 			//エラーコード
 			Error error_ = Error(0);
 
@@ -916,15 +1164,9 @@ namespace wawl {
 				const TString* currentDir,
 				const StartupInfo* startupInfo
 				) {
-				if (procAttrib)
-					procAttrib_ = *procAttrib;
-				if (threadAttrib)
-					threadAttrib_ = *threadAttrib;
-
-				if (startupInfo)
-					startupInfo_ = *startupInfo;
-				else
-					startupInfo_ = StartupInfo();
+				::STARTUPINFO si = (startupInfo ? *startupInfo : StartupInfo{}).get();
+				::SECURITY_ATTRIBUTES procSa = (procAttrib ? *procAttrib : SecurityAttrib{}).get();
+				::SECURITY_ATTRIBUTES threadSa = (threadAttrib ? *threadAttrib : SecurityAttrib{}).get();
 
 				ProcInfo* tmpProcInfo = new ProcInfo();
 
@@ -932,13 +1174,13 @@ namespace wawl {
 					::CreateProcess(
 						(appName == nullptr ? nullptr : appName->c_str()),
 						(cmdLineArgs == nullptr ? nullptr : const_cast<TChar*>(cmdLineArgs->c_str())),
-						(procAttrib == nullptr ? nullptr : &procAttrib_.get()),
-						(threadAttrib == nullptr ? nullptr : &threadAttrib_.get()),
+						(procAttrib == nullptr ? nullptr : &procSa),
+						(threadAttrib == nullptr ? nullptr : &threadSa),
 						doInheritHandle,
 						(createProv == nullptr ? NORMAL_PRIORITY_CLASS : createProv->get()),
 						(envVars == nullptr ? nullptr : reinterpret_cast<void*>(const_cast<TChar*>(envVars->c_str()))),
 						(currentDir == nullptr ? nullptr : currentDir->c_str()),
-						&startupInfo_.get(),
+						&si,
 						reinterpret_cast<::PROCESS_INFORMATION*>(tmpProcInfo)
 						) == 0
 					)
@@ -947,7 +1189,7 @@ namespace wawl {
 					procInfo_ = ValType(
 						tmpProcInfo,
 						releaseInfo
-					);
+						);
 				}
 			}
 
@@ -1046,7 +1288,7 @@ namespace wawl {
 				::GetPrivateProfileString(
 					sectionName.c_str(),
 					keyName.c_str(),
-					L"",
+					TEXT(""),
 					ret,
 					sizeof(ret) / sizeof(TChar),
 					fileName_.c_str()

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #define WAWL_ENABLE_BASETYPE
 #define WAWL_ENABLE
@@ -31,8 +31,6 @@ namespace wawl {
 	//汎用文字列型
 	using TString = std::basic_string < TChar >;
 
-	//実質的にはintだけど一応宣言
-	using Bool = ::BOOL;
 	//符号無し8bit整数
 	using Byte = ::BYTE;
 	//符号無し16bit整数

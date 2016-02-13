@@ -61,7 +61,7 @@ namespace wawl {
 		}
 		
 		//コンピューターをシャットダウンする
-		inline bool startShutdown(const TString& machineName, const TString& msg, Dword timeOut = 0, Bool force = false, Bool doRestart = false) {
+		inline bool startShutdown(const TString& machineName, const TString& msg, Dword timeOut = 0, bool force = false, bool doRestart = false) {
 			return ::InitiateSystemShutdown(
 				const_cast<TChar*>(machineName.c_str()),
 				const_cast<TChar*>(msg.c_str()),
@@ -94,7 +94,7 @@ namespace wawl {
 			friend bool resetTimeRes();
 
 		#ifdef WIN32
-			static void setWinMainArgs(const TString& cmdLine, int cmdShow) {
+			static void setMainArgs(const TString& cmdLine, int cmdShow) {
 				//初回呼び出しの時のみ登録
 				static bool isFirst = true;
 				if (isFirst) {
@@ -173,7 +173,7 @@ int WINAPI _tWinMain(
 	) {
 	using namespace wawl;
 
-	sys::_impl_System::setWinMainArgs(cmdLine, cmdShow);
+	sys::_impl_System::setMainArgs(cmdLine, cmdShow);
 
 	wawlMain();
 
@@ -183,6 +183,7 @@ int WINAPI _tWinMain(
 #else //!WIN32
 
 int main(int argc, char* argv[]) {
+	sys::_impl_System::setMainArgs(argc, argv);
 	wawlMain();
 }
 
